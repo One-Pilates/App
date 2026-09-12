@@ -1,8 +1,13 @@
 import { Redirect, Tabs } from "expo-router";
+
 import { View, ActivityIndicator, Image } from "react-native";
+
 import { Feather } from "@expo/vector-icons";
+
 import { useAuth } from "@/contexts/AuthContext";
+
 // Fluxo de Secretaria/Administrador (tabs principais + telas internas ocultas).
+
 export default function SecretaryLayout() {
   const { signed, user, loading } = useAuth();
 
@@ -43,6 +48,7 @@ export default function SecretaryLayout() {
 
         headerStyle: {
           backgroundColor: "#f77433",
+
           elevation: 0,
 
           shadowOpacity: 0,
@@ -102,16 +108,18 @@ export default function SecretaryLayout() {
       />
 
       <Tabs.Screen
-        name="perfil"
+        name="mais"
         options={{
-          title: "Perfil",
+          title: "Mais",
           tabBarIcon: ({ color, size }) => (
-            <Feather name="user" size={size} color={color} />
+            <Feather name="menu" size={size} color={color} />
           ),
         }}
       />
 
       {/* Telas internas fora da tab bar */}
+
+      <Tabs.Screen name="perfil" options={{ href: null }} />
 
       <Tabs.Screen name="colaboradores" options={{ href: null }} />
 

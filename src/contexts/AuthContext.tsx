@@ -88,8 +88,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await api.post("/auth/login", { email, senha });
       const data = response.data;
 
-      console.log("Resposta do login:", data);
-
       const tokenCandidate =
         data?.token ||
         data?.accessToken ||

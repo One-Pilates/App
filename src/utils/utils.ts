@@ -78,3 +78,30 @@ export function getEstadoNome(uf?: string | null): string {
 
   return ESTADOS[uf.toUpperCase()] || "";
 }
+
+export const especialidadeCores: Record<string, string> = {
+  Pilates: "#ff6600",
+
+  Fisioterapia: "#4CAF50",
+
+  Osteopatia: "#2196F3",
+
+  RPG: "#009688",
+
+  Microfisioterapia: "#9C27B0",
+
+  Shiatsu: "#673AB7",
+
+  "Drenagem Linfática": "#03A9F4",
+
+  Acupuntura: "#E91E63",
+};
+
+export function getColorForEspecialidade(nome?: string): {
+  backgroundColor: string;
+  textColor: string;
+} {
+  const backgroundColor = (nome && especialidadeCores[nome]) || "#3788d8";
+
+  return { backgroundColor, textColor: "#fff" };
+}
