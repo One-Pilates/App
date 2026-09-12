@@ -15,9 +15,9 @@ export default function TeacherLayout() {
     );
   }
 
-  const tipo = (user?.tipo || '').toUpperCase();
+  const role = (user?.role || '').toUpperCase();
   if (!signed) return <Redirect href="/(public)/login" />;
-  if (tipo !== 'PROFESSOR') return <Redirect href="/(secretary)/dashboard" />;
+  if (role !== 'PROFESSOR') return <Redirect href="/(secretary)/dashboard" />;
 
   return (
     <Tabs

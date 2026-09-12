@@ -18,7 +18,7 @@ export default function Index() {
     return <Redirect href="/(public)/login" />;
   }
 
-  const tipo = (user?.tipo || '').toUpperCase();
+  const tipo = (user?.role || '').toUpperCase();
   if (tipo === 'PROFESSOR') {
     return <Redirect href="/(teacher)/dashboard" />;
   }
