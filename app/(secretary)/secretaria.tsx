@@ -14,7 +14,7 @@ import {
 
 import { Feather } from "@expo/vector-icons";
 
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -90,6 +90,22 @@ export default function GerenciamentoSecretaria() {
   useEffect(() => {
     fetchSecretarias();
   }, [fetchSecretarias]);
+
+  // Recarrega ao voltar para a tela (ex.: após cadastrar secretária).
+
+  const primeiroFoco = useRef(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (primeiroFoco.current) {
+        primeiroFoco.current = false;
+
+        return;
+      }
+
+      fetchSecretarias();
+    }, [fetchSecretarias]),
+  );
 
   const filtradas = useMemo(() => {
     const termo = busca.trim().toLowerCase();

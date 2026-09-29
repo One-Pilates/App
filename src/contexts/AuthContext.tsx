@@ -43,6 +43,7 @@ export interface User {
 interface LoginResult {
   success: boolean;
   message?: string;
+  primeiroAcesso?: boolean;
 }
 
 interface AuthContextData {
@@ -116,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setUser(userData);
 
-      return { success: true };
+      return { success: true, primeiroAcesso: !!userData.primeiroAcesso };
     } catch (error: any) {
       console.error("Erro no login:", error);
 

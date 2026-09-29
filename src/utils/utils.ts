@@ -32,10 +32,78 @@ export function somenteDigitos(valor?: string | null): string {
   return (valor || "").replace(/\D/g, "");
 }
 
+// Converte um Date (local) para 'yyyy-mm-dd' sem passar por UTC (evita deslocar o dia por fuso).
+
+export function dataParaIso(date: Date): string {
+  const ano = date.getFullYear();
+
+  const mes = String(date.getMonth() + 1).padStart(2, "0");
+
+  const dia = String(date.getDate()).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}`;
+}
+
+// Converte 'yyyy-mm-dd' para um Date na meia-noite local (evita o off-by-one do parse UTC).
+
+export function isoParaData(iso?: string | null): Date {
+  if (!iso) return new Date();
+
+  const [ano, mes, dia] = iso.split("-").map(Number);
+
+  if (!ano || !mes || !dia) return new Date();
+
+  return new Date(ano, mes - 1, dia);
+}
+
 export function validarEmail(email?: string | null): boolean {
   if (!email) return false;
 
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+export function formatarCpf(cpf?: string | null): string {
+  const digits = (cpf || "").replace(/\D/g, "").slice(0, 11);
+
+  return digits
+
+    .replace(/(\d{3})(\d)/, "$1.$2")
+
+    .replace(/(\d{3})(\d)/, "$1.$2")
+
+    .replace(/(\d{3})(\d{1,2})/, "$1-$2")
+
+    .replace(/(-\d{2})\d+?$/, "$1");
+}
+
+export function validarCpf(cpf?: string | null): boolean {
+  const digits = (cpf || "").replace(/\D/g, "");
+
+  if (digits.length !== 11 || /^(\d)\1+$/.test(digits)) return false;
+
+  let soma = 0;
+
+  for (let i = 1; i <= 9; i++) {
+    soma += parseInt(digits.substring(i - 1, i), 10) * (11 - i);
+  }
+
+  let resto = (soma * 10) % 11;
+
+  if (resto === 10 || resto === 11) resto = 0;
+
+  if (resto !== parseInt(digits.substring(9, 10), 10)) return false;
+
+  soma = 0;
+
+  for (let i = 1; i <= 10; i++) {
+    soma += parseInt(digits.substring(i - 1, i), 10) * (12 - i);
+  }
+
+  resto = (soma * 10) % 11;
+
+  if (resto === 10 || resto === 11) resto = 0;
+
+  return resto === parseInt(digits.substring(10, 11), 10);
 }
 
 const ESTADOS: Record<string, string> = {

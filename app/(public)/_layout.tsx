@@ -1,10 +1,14 @@
-import { Redirect, Stack } from 'expo-router';
+import { Redirect, Stack, useSegments } from 'expo-router';
 import { View, ActivityIndicator } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
+
+const PERMTIDAS_LOGADO = ['nova-senha', 'redefinir-senha']
 
 // Bloqueia acesso às telas públicas quando já autenticado.
 export default function PublicLayout() {
   const { signed, loading } = useAuth();
+  const segments = useSegments();
+  const rotaAtual = segments[segments.length - 1] || '';
 
   if (loading) {
     return (
@@ -14,7 +18,7 @@ export default function PublicLayout() {
     );
   }
 
-  if (signed) {
+  if (signed && !PERMTIDAS_LOGADO.includes(rotaAtual)) {
     return <Redirect href="/" />;
   }
 

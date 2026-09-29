@@ -14,7 +14,7 @@ import {
 
 import { Feather } from "@expo/vector-icons";
 
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -130,6 +130,24 @@ export default function GerenciamentoProfessor() {
 
     fetchProfessores(1, false, nameFilter);
   }, [nameFilter, fetchProfessores]);
+
+  // Recarrega ao voltar para a tela (ex.: após cadastrar professor).
+
+  const primeiroFoco = useRef(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (primeiroFoco.current) {
+        primeiroFoco.current = false;
+
+        return;
+      }
+
+      setHasMore(true);
+
+      fetchProfessores(1, false, nameFilter);
+    }, [nameFilter, fetchProfessores]),
+  );
 
   function loadMore() {
     if (loadingMore || loading || !hasMore) return;
