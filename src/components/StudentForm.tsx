@@ -261,6 +261,50 @@ export default function StudentForm({ alunoId }: { alunoId?: string }) {
     });
   }
 
+  // A tela segue montada no navegador de tabs; limpamos ao sair para não reabrir preenchida.
+
+  function sair() {
+    if (!isEditMode) {
+      setEtapaAtual(1);
+
+      setErros({});
+
+      setSemNumero(false);
+
+      setDadosPessoais({
+        nomeCompleto: "",
+        email: "",
+        cpf: "",
+        dataNascimento: "",
+        telefone: "",
+      });
+
+      setEndereco({
+        cep: "",
+
+        logradouro: "",
+
+        numero: "",
+
+        bairro: "",
+
+        cidade: "",
+
+        estado: "",
+
+        uf: "",
+      });
+
+      setInformacoesAluno({
+        problemasMobilidade: false,
+        notificacaoAtiva: true,
+        observacao: "",
+      });
+    }
+
+    router.back();
+  }
+
   function atualizarDadosPessoais(novos: Partial<DadosPessoais>) {
     setDadosPessoais((prev) => ({ ...prev, ...novos }));
 
@@ -477,7 +521,7 @@ export default function StudentForm({ alunoId }: { alunoId?: string }) {
         notify.success("Aluno cadastrado com sucesso!");
       }
 
-      router.back();
+      sair();
     } catch (error) {
       console.error("Erro ao salvar aluno:", error);
 
@@ -508,10 +552,7 @@ export default function StudentForm({ alunoId }: { alunoId?: string }) {
 
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={sair}>
             <Feather name="arrow-left" size={22} color="#0f172a" />
           </TouchableOpacity>
 

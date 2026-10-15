@@ -10,8 +10,6 @@ import {
   Switch,
   Modal,
   FlatList,
-  Image,
-  Alert,
   Platform,
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -20,8 +18,6 @@ import {
 import { Feather } from "@expo/vector-icons";
 
 import { useRouter } from "expo-router";
-
-import * as ImagePicker from "expo-image-picker";
 
 import DateTimePicker from "@react-native-community/datetimepicker";
 
@@ -40,12 +36,6 @@ import {
   dataParaIso,
   isoParaData,
 } from "@/utils/utils";
-
-interface Especialidade {
-  id: number;
-
-  nome: string;
-}
 
 interface DadosPessoais {
   nomeCompleto: string;
@@ -75,14 +65,12 @@ interface EnderecoForm {
   uf: string;
 }
 
-interface InformacoesProfissionais {
-  cargo: string;
-
-  especialidades: number[];
+interface InformacoesAluno {
+  problemasMobilidade: boolean;
 
   notificacaoAtiva: boolean;
 
-  observacoes: string;
+  observacao: string;
 }
 
 type Erros = Record<string, string>;
@@ -118,6 +106,16 @@ const UFS = [
   "TO",
 ];
 
+const ETAPAS = [
+  { label: "Dados Pessoais" },
+
+  { label: "Endereço" },
+
+  { label: "Informações" },
+
+  { label: "Confirmação" },
+];
+
 function formatarDataBr(iso?: string): string {
   if (!iso) return "";
 
@@ -128,41 +126,18 @@ function formatarDataBr(iso?: string): string {
   return `${dia}/${mes}/${ano}`;
 }
 
-export default function CollaboratorForm({
-  role: roleParam,
-}: {
-  role?: string;
-}) {
+export default function StudentForm({ alunoId }: { alunoId?: string }) {
   const router = useRouter();
 
-  const roleNormalizado = (roleParam || "").toUpperCase();
-
-  const isValidRole = ["PROFESSOR", "SECRETARIA"].includes(roleNormalizado);
-
-  const role = isValidRole ? roleNormalizado : "PROFESSOR";
-
-  const isProfessor = role === "PROFESSOR";
-
-  const ETAPAS = [
-    { label: "Dados Pessoais" },
-
-    { label: "Endereço" },
-
-    { label: "Informações" },
-
-    { label: "Confirmação" },
-  ];
+  const isEditMode = !!alunoId;
 
   const [etapaAtual, setEtapaAtual] = useState(1);
 
-  const [cadastrando, setCadastrando] = useState(false);
+  const [carregando, setCarregando] = useState(false);
+
+  const [carregandoDados, setCarregandoDados] = useState(isEditMode);
 
   const [erros, setErros] = useState<Erros>({});
-
-  const [especialidades, setEspecialidades] = useState<Especialidade[]>([]);
-
-  const [pickedImage, setPickedImage] =
-    useState<ImagePicker.ImagePickerAsset | null>(null);
 
   const [dadosPessoais, setDadosPessoais] = useState<DadosPessoais>({
     nomeCompleto: "",
@@ -192,14 +167,12 @@ export default function CollaboratorForm({
     uf: "",
   });
 
-  const [informacoes, setInformacoes] = useState<InformacoesProfissionais>({
-    cargo: "",
-
-    especialidades: [],
+  const [informacoesAluno, setInformacoesAluno] = useState<InformacoesAluno>({
+    problemasMobilidade: false,
 
     notificacaoAtiva: true,
 
-    observacoes: "",
+    observacao: "",
   });
 
   const [semNumero, setSemNumero] = useState(false);
@@ -208,29 +181,67 @@ export default function CollaboratorForm({
 
   const [showUfModal, setShowUfModal] = useState(false);
 
-  // Redireciona se a role da rota for inválida.
+  // Carrega o aluno no modo edição.
 
   useEffect(() => {
-    if (!isValidRole) router.back();
-  }, [isValidRole]);
-
-  // Carrega especialidades (somente professor).
-
-  useEffect(() => {
-    if (!isProfessor) return;
+    if (!isEditMode) return;
 
     api
 
-      .get("api/especialidades")
+      .get(`api/alunos/${alunoId}`)
 
-      .then((res) => setEspecialidades(res.data || []))
+      .then((res) => {
+        const a = res.data;
+
+        setDadosPessoais({
+          nomeCompleto: a.nome || "",
+
+          email: a.email || "",
+
+          cpf: formatarCpf(a.cpf) || "",
+
+          dataNascimento: a.dataNascimento
+            ? a.dataNascimento.substring(0, 10)
+            : "",
+
+          telefone: formatarTelefone(a.telefone) || "",
+        });
+
+        setEndereco({
+          cep: formatarCep(a.endereco?.cep) || "",
+
+          logradouro: a.endereco?.rua || "",
+
+          numero: a.endereco?.numero || "",
+
+          bairro: a.endereco?.bairro || "",
+
+          cidade: a.endereco?.cidade || "",
+
+          estado: a.endereco?.estado || "",
+
+          uf: a.endereco?.uf || "",
+        });
+
+        setInformacoesAluno({
+          problemasMobilidade: a.alunoComLimitacoesFisicas ?? false,
+
+          notificacaoAtiva: a.notificacaoAtiva ?? true,
+
+          observacao: a.observacao || "",
+        });
+      })
 
       .catch((err) => {
-        console.error("Erro ao buscar especialidades:", err);
+        console.error("Erro ao carregar aluno para edição:", err);
 
-        notify.error("Não foi possível carregar as especialidades.");
-      });
-  }, [isProfessor]);
+        notify.error("Não foi possível carregar os dados do aluno.");
+
+        router.back();
+      })
+
+      .finally(() => setCarregandoDados(false));
+  }, [alunoId]);
 
   useEffect(() => {
     if (endereco.numero === "0" || endereco.numero.toUpperCase() === "S/N") {
@@ -250,6 +261,50 @@ export default function CollaboratorForm({
     });
   }
 
+  // A tela segue montada no navegador de tabs; limpamos ao sair para não reabrir preenchida.
+
+  function sair() {
+    if (!isEditMode) {
+      setEtapaAtual(1);
+
+      setErros({});
+
+      setSemNumero(false);
+
+      setDadosPessoais({
+        nomeCompleto: "",
+        email: "",
+        cpf: "",
+        dataNascimento: "",
+        telefone: "",
+      });
+
+      setEndereco({
+        cep: "",
+
+        logradouro: "",
+
+        numero: "",
+
+        bairro: "",
+
+        cidade: "",
+
+        estado: "",
+
+        uf: "",
+      });
+
+      setInformacoesAluno({
+        problemasMobilidade: false,
+        notificacaoAtiva: true,
+        observacao: "",
+      });
+    }
+
+    router.back();
+  }
+
   function atualizarDadosPessoais(novos: Partial<DadosPessoais>) {
     setDadosPessoais((prev) => ({ ...prev, ...novos }));
 
@@ -262,10 +317,8 @@ export default function CollaboratorForm({
     limparErros(Object.keys(novos));
   }
 
-  function atualizarInformacoes(novos: Partial<InformacoesProfissionais>) {
-    setInformacoes((prev) => ({ ...prev, ...novos }));
-
-    limparErros(Object.keys(novos));
+  function atualizarInformacoes(novos: Partial<InformacoesAluno>) {
+    setInformacoesAluno((prev) => ({ ...prev, ...novos }));
   }
 
   function toggleSemNumero(checked: boolean) {
@@ -274,53 +327,7 @@ export default function CollaboratorForm({
     atualizarEndereco({ numero: checked ? "0" : "" });
   }
 
-  function toggleEspecialidade(id: number) {
-    setInformacoes((prev) => {
-      const atuais = prev.especialidades || [];
-
-      const novas = atuais.includes(id)
-        ? atuais.filter((x) => x !== id)
-        : [...atuais, id];
-
-      return { ...prev, especialidades: novas };
-    });
-
-    limparErros(["especialidades"]);
-  }
-
-  async function handlePickImage() {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    if (!perm.granted) {
-      notify.warning("Precisamos de acesso à galeria para escolher a foto.");
-
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-
-      allowsEditing: true,
-
-      aspect: [1, 1],
-
-      quality: 0.8,
-    });
-
-    if (result.canceled) return;
-
-    const asset = result.assets[0];
-
-    if (asset.fileSize && asset.fileSize > 10 * 1024 * 1024) {
-      notify.warning(
-        "A imagem deve ter no máximo 10MB. Selecione uma imagem menor.",
-      );
-
-      return;
-    }
-
-    setPickedImage(asset);
-  }
+  // Busca CEP no ViaCEP quando completa 8 dígitos.
 
   async function buscarCep(valor: string) {
     const cepLimpo = valor.replace(/\D/g, "");
@@ -350,7 +357,7 @@ export default function CollaboratorForm({
     } catch (err) {
       console.error("Erro ao buscar CEP:", err);
 
-      notify.error("Não foi possível consultar o CEP. Tente novamente.");
+      notify.error("Erro ao buscar CEP. Tente novamente.");
     }
   }
 
@@ -374,17 +381,18 @@ export default function CollaboratorForm({
     const novosErros: Erros = {};
 
     if (etapaAtual === 1) {
-      if (!dadosPessoais.nomeCompleto.trim())
-        novosErros.nomeCompleto = "Nome obrigatório";
+      if (!dadosPessoais.nomeCompleto.trim()) {
+        novosErros.nomeCompleto = "Nome completo é obrigatório";
+      }
 
       if (!dadosPessoais.email.trim()) {
-        novosErros.email = "Email obrigatório";
+        novosErros.email = "Email é obrigatório";
       } else if (!validarEmail(dadosPessoais.email)) {
         novosErros.email = "Email inválido";
       }
 
       if (!dadosPessoais.cpf.trim()) {
-        novosErros.cpf = "CPF obrigatório";
+        novosErros.cpf = "CPF é obrigatório";
       } else if (!validarCpf(dadosPessoais.cpf)) {
         novosErros.cpf = "CPF inválido";
       }
@@ -428,27 +436,18 @@ export default function CollaboratorForm({
       }
 
       if (!endereco.logradouro.trim())
-        novosErros.logradouro = "Logradouro obrigatório";
+        novosErros.logradouro = "Logradouro é obrigatório";
 
-      if (!semNumero && !endereco.numero.trim()) {
-        novosErros.numero = "Número obrigatório (ou marque 'Sem número')";
-      }
+      if (!semNumero && !endereco.numero.trim())
+        novosErros.numero = "Número é obrigatório";
 
-      if (!endereco.bairro.trim()) novosErros.bairro = "Bairro obrigatório";
+      if (!endereco.bairro.trim()) novosErros.bairro = "Bairro é obrigatório";
 
-      if (!endereco.cidade.trim()) novosErros.cidade = "Cidade obrigatória";
+      if (!endereco.cidade.trim()) novosErros.cidade = "Cidade é obrigatória";
 
-      if (!endereco.estado.trim()) novosErros.estado = "Estado obrigatório";
+      if (!endereco.estado) novosErros.estado = "Estado é obrigatório";
 
-      if (!endereco.uf) novosErros.uf = "UF obrigatória";
-    }
-
-    if (etapaAtual === 3) {
-      if (!informacoes.cargo.trim()) novosErros.cargo = "Cargo obrigatório";
-
-      if (isProfessor && !informacoes.especialidades?.length) {
-        novosErros.especialidades = "Selecione ao menos uma especialidade";
-      }
+      if (!endereco.uf) novosErros.uf = "UF é obrigatória";
     }
 
     setErros(novosErros);
@@ -472,127 +471,77 @@ export default function CollaboratorForm({
     if (numero <= etapaAtual && numero >= 1) setEtapaAtual(numero);
   }
 
-  async function uploadFoto(colaboradorId: number) {
-    if (!pickedImage) return;
+  async function salvarAluno() {
+    setCarregando(true);
 
-    const formData = new FormData();
+    const payload = {
+      nome: dadosPessoais.nomeCompleto || "",
 
-    formData.append("file", {
-      uri: pickedImage.uri,
-
-      name: pickedImage.fileName || `foto_${colaboradorId}.jpg`,
-
-      type: pickedImage.mimeType || "image/jpeg",
-    } as any);
-
-    const endpoint = isProfessor
-      ? `api/professores/${colaboradorId}/uploadFoto`
-      : `api/secretarias/${colaboradorId}/uploadFoto`;
-
-    await api.post(endpoint, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-  }
-
-  async function cadastrarColaborador() {
-    setCadastrando(true);
-
-    const senhaGerada = Math.floor(100000 + Math.random() * 900000).toString();
-
-    const payload: any = {
-      nome: dadosPessoais.nomeCompleto.trim(),
-
-      email: dadosPessoais.email.trim().toLowerCase(),
+      email: dadosPessoais.email || "",
 
       cpf: somenteDigitos(dadosPessoais.cpf),
 
-      idade: dadosPessoais.dataNascimento,
+      dataNascimento: dadosPessoais.dataNascimento || "",
 
       status: true,
 
-      foto: null,
+      alunoComLimitacoesFisicas: !!informacoesAluno.problemasMobilidade,
 
-      observacoes: informacoes.observacoes?.trim() || "",
-
-      notificacaoAtiva: informacoes.notificacaoAtiva,
-
-      senha: senhaGerada,
-
-      cargo: informacoes.cargo.trim(),
-
-      endereco: {
-        rua: endereco.logradouro.trim(),
-
-        numero: endereco.numero === "S/N" ? "0" : endereco.numero.trim(),
-
-        bairro: endereco.bairro.trim(),
-
-        cidade: endereco.cidade.trim(),
-
-        estado: endereco.estado.trim(),
-
-        cep: somenteDigitos(endereco.cep),
-
-        uf: endereco.uf,
-      },
-
-      role,
+      observacao: informacoesAluno.observacao || "",
 
       telefone: somenteDigitos(dadosPessoais.telefone),
 
-      ...(isProfessor ? { especialidadeIds: informacoes.especialidades } : {}),
+      notificacaoAtiva: !!informacoesAluno.notificacaoAtiva,
+
+      endereco: {
+        rua: endereco.logradouro || "",
+
+        numero: endereco.numero || "",
+
+        bairro: endereco.bairro || "",
+
+        cidade: endereco.cidade || "",
+
+        estado: endereco.estado || "",
+
+        cep: somenteDigitos(endereco.cep),
+
+        uf: endereco.uf || "",
+      },
     };
 
-    const url = role === "SECRETARIA" ? "api/secretarias" : "api/professores";
-
     try {
-      const response = await api.post(url, payload);
+      if (isEditMode) {
+        await api.patch(`api/alunos/${alunoId}`, payload);
 
-      if (pickedImage && response.data?.id) {
-        try {
-          await uploadFoto(response.data.id);
-        } catch (fotoError) {
-          console.error("Erro ao enviar foto (não crítico):", fotoError);
-        }
+        notify.success("Aluno atualizado com sucesso!");
+      } else {
+        await api.post("api/alunos", payload);
+
+        notify.success("Aluno cadastrado com sucesso!");
       }
 
-      Alert.alert(
-        "Colaborador cadastrado com sucesso!",
+      sair();
+    } catch (error) {
+      console.error("Erro ao salvar aluno:", error);
 
-        `Nome: ${dadosPessoais.nomeCompleto}\nEmail: ${dadosPessoais.email}\n\n` +
-          `Senha gerada: ${senhaGerada}\nGuarde esta senha para o primeiro acesso.`,
-
-        [{ text: "OK, entendi!", onPress: () => router.back() }],
+      notify.error(
+        isEditMode
+          ? "Não foi possível atualizar o aluno."
+          : "Não foi possível cadastrar o aluno.",
       );
-    } catch (error: any) {
-      console.error("Erro no cadastro:", error);
-
-      const status = error.response?.status;
-
-      let mensagem = "Erro ao cadastrar colaborador";
-
-      if (status === 409) {
-        mensagem = "CPF ou Email já cadastrado no sistema.";
-      } else if (status === 400) {
-        mensagem = "Dados inválidos. Verifique os campos e tente novamente.";
-      } else if (status === 401) {
-        mensagem = "Sessão expirada. Faça login novamente.";
-      }
-
-      notify.error(mensagem);
     } finally {
-      setCadastrando(false);
+      setCarregando(false);
     }
   }
 
-  const nomeEspecialidades =
-    informacoes.especialidades
-
-      .map((id) => especialidades.find((e) => e.id === id)?.nome)
-
-      .filter(Boolean)
-
-      .join(", ") || "Nenhuma";
+  if (carregandoDados) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#f77433" />
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -603,15 +552,12 @@ export default function CollaboratorForm({
 
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={sair}>
             <Feather name="arrow-left" size={22} color="#0f172a" />
           </TouchableOpacity>
 
           <Text style={styles.title}>
-            Cadastrar {isProfessor ? "Professor" : "Secretária"}
+            {isEditMode ? "Editar Aluno" : "Cadastrar Aluno"}
           </Text>
 
           <View style={styles.stepBadge}>
@@ -621,11 +567,7 @@ export default function CollaboratorForm({
           </View>
         </View>
 
-        <StepIndicator
-          etapas={ETAPAS}
-          currentStep={etapaAtual}
-          onStepClick={irParaEtapa}
-        />
+        <StepIndicator currentStep={etapaAtual} onStepClick={irParaEtapa} />
       </View>
 
       <ScrollView
@@ -638,31 +580,8 @@ export default function CollaboratorForm({
           <EtapaCard
             icone="user"
             titulo="Dados Pessoais"
-            subtitulo="Informações básicas do colaborador"
+            subtitulo="Informações básicas do aluno"
           >
-            <View style={styles.photoSection}>
-              <TouchableOpacity
-                style={styles.photoContainer}
-                onPress={handlePickImage}
-                activeOpacity={0.8}
-              >
-                {pickedImage ? (
-                  <Image
-                    source={{ uri: pickedImage.uri }}
-                    style={styles.photo}
-                  />
-                ) : (
-                  <Feather name="camera" size={30} color="#94a3b8" />
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity onPress={handlePickImage}>
-                <Text style={styles.photoButtonText}>
-                  Selecione a foto de perfil
-                </Text>
-              </TouchableOpacity>
-            </View>
-
             <Campo
               label="Nome completo"
               obrigatorio
@@ -765,7 +684,7 @@ export default function CollaboratorForm({
           <EtapaCard
             icone="map-pin"
             titulo="Endereço"
-            subtitulo="Local de residência do colaborador"
+            subtitulo="Local de residência do aluno"
           >
             <Campo
               label="CEP"
@@ -881,80 +800,20 @@ export default function CollaboratorForm({
 
         {etapaAtual === 3 && (
           <EtapaCard
-            icone="briefcase"
-            titulo="Informações Profissionais"
-            subtitulo={`Cargo${isProfessor ? ", especialidades" : ""} e configurações`}
+            icone="clipboard"
+            titulo="Informações do Aluno"
+            subtitulo="Dados de saúde e observações"
           >
-            <Campo
-              label="Cargo"
-              obrigatorio
-              erro={erros.cargo}
-              icone="briefcase"
-              value={informacoes.cargo}
-              onChangeText={(v) => atualizarInformacoes({ cargo: v })}
-              placeholder="Ex: Fisioterapeuta, Professor de Pilates, Secretária..."
-            />
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>Problema de mobilidade</Text>
 
-            {isProfessor && (
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>
-                  Especialidades<Text style={styles.required}> *</Text>
-                </Text>
-
-                {especialidades.length === 0 ? (
-                  <Text style={styles.loadingText}>
-                    Carregando especialidades...
-                  </Text>
-                ) : (
-                  <View style={styles.chipsWrap}>
-                    {especialidades.map((esp) => {
-                      const selected = informacoes.especialidades.includes(
-                        esp.id,
-                      );
-
-                      return (
-                        <TouchableOpacity
-                          key={esp.id}
-                          onPress={() => toggleEspecialidade(esp.id)}
-                          style={[styles.chip, selected && styles.chipSelected]}
-                          activeOpacity={0.7}
-                        >
-                          <Text
-                            style={[
-                              styles.chipText,
-                              selected && styles.chipTextSelected,
-                            ]}
-                          >
-                            {esp.nome}
-                          </Text>
-
-                          {selected && (
-                            <Feather name="check" size={14} color="#fff" />
-                          )}
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                )}
-
-                {erros.especialidades ? (
-                  <Text style={styles.errorText}>{erros.especialidades}</Text>
-                ) : null}
-              </View>
-            )}
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Observações</Text>
-
-              <TextInput
-                style={styles.textarea}
-                value={informacoes.observacoes}
-                onChangeText={(v) => atualizarInformacoes({ observacoes: v })}
-                placeholder="Informações adicionais sobre o colaborador..."
-                placeholderTextColor="#94a3b8"
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
+              <Switch
+                value={informacoesAluno.problemasMobilidade}
+                onValueChange={(v) =>
+                  atualizarInformacoes({ problemasMobilidade: v })
+                }
+                trackColor={{ false: "#cbd5e1", true: "#f77433" }}
+                thumbColor="#fff"
               />
             </View>
 
@@ -964,12 +823,27 @@ export default function CollaboratorForm({
               </Text>
 
               <Switch
-                value={informacoes.notificacaoAtiva}
+                value={informacoesAluno.notificacaoAtiva}
                 onValueChange={(v) =>
                   atualizarInformacoes({ notificacaoAtiva: v })
                 }
                 trackColor={{ false: "#cbd5e1", true: "#f77433" }}
                 thumbColor="#fff"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Observações</Text>
+
+              <TextInput
+                style={styles.textarea}
+                value={informacoesAluno.observacao}
+                onChangeText={(v) => atualizarInformacoes({ observacao: v })}
+                placeholder="Digite observações sobre o aluno..."
+                placeholderTextColor="#94a3b8"
+                multiline
+                numberOfLines={6}
+                textAlignVertical="top"
               />
             </View>
           </EtapaCard>
@@ -979,7 +853,7 @@ export default function CollaboratorForm({
           <EtapaCard
             icone="check-circle"
             titulo="Revisão e Confirmação"
-            subtitulo="Verifique se tudo está correto antes de cadastrar"
+            subtitulo="Verifique se tudo está correto antes de salvar"
           >
             <SecaoRevisao titulo="Dados Pessoais">
               <LinhaInfo label="Nome" valor={dadosPessoais.nomeCompleto} />
@@ -1012,23 +886,24 @@ export default function CollaboratorForm({
               <LinhaInfo label="UF" valor={endereco.uf} />
             </SecaoRevisao>
 
-            <SecaoRevisao titulo="Informações Profissionais">
-              <LinhaInfo label="Cargo" valor={informacoes.cargo} />
-
-              {isProfessor && (
-                <LinhaInfo label="Especialidades" valor={nomeEspecialidades} />
-              )}
+            <SecaoRevisao titulo="Informações do Aluno">
+              <LinhaInfo
+                label="Problema de Mobilidade"
+                valor={informacoesAluno.problemasMobilidade ? "Sim" : "Não"}
+              />
 
               <LinhaInfo
-                label="Notificações"
+                label="Notificações por E-mail"
                 valor={
-                  informacoes.notificacaoAtiva ? "Ativadas" : "Desativadas"
+                  informacoesAluno.notificacaoAtiva ? "Ativado" : "Desativado"
                 }
               />
 
               <LinhaInfo
                 label="Observações"
-                valor={informacoes.observacoes || "Nenhuma"}
+                valor={
+                  informacoesAluno.observacao || "Nenhuma observação registrada"
+                }
               />
             </SecaoRevisao>
           </EtapaCard>
@@ -1041,7 +916,7 @@ export default function CollaboratorForm({
             <TouchableOpacity
               style={styles.btnBack}
               onPress={etapaAnterior}
-              disabled={cadastrando}
+              disabled={carregando}
             >
               <Feather name="arrow-left" size={16} color="#475569" />
 
@@ -1050,25 +925,28 @@ export default function CollaboratorForm({
           )}
 
           {etapaAtual < 4 ? (
-            <TouchableOpacity style={styles.btnNext} onPress={proximaEtapa}>
+            <TouchableOpacity
+              style={[styles.btnNext, etapaAtual === 1 && styles.btnFull]}
+              onPress={proximaEtapa}
+            >
               <Text style={styles.btnNextText}>Próximo</Text>
 
               <Feather name="arrow-right" size={16} color="#fff" />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
-              style={[styles.btnFinish, cadastrando && styles.btnDisabled]}
-              onPress={cadastrarColaborador}
-              disabled={cadastrando}
+              style={[styles.btnFinish, carregando && styles.btnDisabled]}
+              onPress={salvarAluno}
+              disabled={carregando}
             >
-              {cadastrando ? (
+              {carregando ? (
                 <ActivityIndicator color="#fff" />
               ) : (
                 <>
                   <Feather name="check" size={18} color="#fff" />
 
                   <Text style={styles.btnFinishText}>
-                    Confirmar e Cadastrar
+                    Confirmar e {isEditMode ? "Salvar" : "Cadastrar"}
                   </Text>
                 </>
               )}
@@ -1134,21 +1012,17 @@ export default function CollaboratorForm({
 // --- Subcomponentes ---
 
 function StepIndicator({
-  etapas,
-
   currentStep,
 
   onStepClick,
 }: {
-  etapas: { label: string }[];
-
   currentStep: number;
 
   onStepClick: (n: number) => void;
 }) {
   return (
     <View style={styles.stepper}>
-      {etapas.map((step, index) => {
+      {ETAPAS.map((step, index) => {
         const stepNumber = index + 1;
 
         const isActive = stepNumber === currentStep;
@@ -1184,7 +1058,7 @@ function StepIndicator({
               )}
             </TouchableOpacity>
 
-            {stepNumber < etapas.length && (
+            {stepNumber < ETAPAS.length && (
               <View
                 style={[
                   styles.stepLine,
@@ -1322,6 +1196,13 @@ function LinhaInfo({ label, valor }: { label: string; valor?: string }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f8fafc" },
 
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f8fafc",
+  },
+
   header: {
     backgroundColor: "#fff",
 
@@ -1362,8 +1243,11 @@ const styles = StyleSheet.create({
 
   stepBadge: {
     backgroundColor: "#fff3eb",
+
     borderRadius: 12,
+
     paddingHorizontal: 10,
+
     paddingVertical: 5,
   },
 
@@ -1450,34 +1334,6 @@ const styles = StyleSheet.create({
 
   etapaSubtitle: { fontSize: 13, color: "#64748b", marginTop: 2 },
 
-  photoSection: { alignItems: "center", marginBottom: 20 },
-
-  photoContainer: {
-    width: 96,
-
-    height: 96,
-
-    borderRadius: 48,
-
-    backgroundColor: "#f8fafc",
-
-    borderWidth: 2,
-
-    borderColor: "#f1f5f9",
-
-    justifyContent: "center",
-
-    alignItems: "center",
-
-    overflow: "hidden",
-
-    marginBottom: 10,
-  },
-
-  photo: { width: "100%", height: "100%" },
-
-  photoButtonText: { fontSize: 14, color: "#f77433", fontWeight: "600" },
-
   inputGroup: { marginBottom: 16 },
 
   label: { fontSize: 13, fontWeight: "600", color: "#0f172a", marginBottom: 8 },
@@ -1512,13 +1368,15 @@ const styles = StyleSheet.create({
 
   errorText: { fontSize: 12, color: "#ef4444", marginTop: 4 },
 
-  loadingText: { fontSize: 13, color: "#94a3b8", fontStyle: "italic" },
-
   checkboxRow: {
     flexDirection: "row",
+
     alignItems: "center",
+
     marginTop: -6,
+
     marginBottom: 16,
+
     gap: 8,
   },
 
@@ -1542,33 +1400,29 @@ const styles = StyleSheet.create({
 
   checkboxLabel: { fontSize: 14, color: "#475569", fontWeight: "500" },
 
-  chipsWrap: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-
-  chip: {
+  switchRow: {
     flexDirection: "row",
 
     alignItems: "center",
 
-    gap: 6,
+    justifyContent: "space-between",
 
-    paddingHorizontal: 14,
+    backgroundColor: "#f8fafc",
 
-    paddingVertical: 8,
+    borderRadius: 12,
 
-    borderRadius: 20,
+    padding: 16,
 
-    backgroundColor: "#f1f5f9",
-
-    borderWidth: 1,
-
-    borderColor: "#e2e8f0",
+    marginBottom: 12,
   },
 
-  chipSelected: { backgroundColor: "#f77433", borderColor: "#f77433" },
-
-  chipText: { fontSize: 14, color: "#475569", fontWeight: "500" },
-
-  chipTextSelected: { color: "#fff" },
+  switchLabel: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "500",
+    color: "#0f172a",
+    paddingRight: 12,
+  },
 
   textarea: {
     backgroundColor: "#f8fafc",
@@ -1585,29 +1439,7 @@ const styles = StyleSheet.create({
 
     color: "#0f172a",
 
-    minHeight: 100,
-  },
-
-  switchRow: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    justifyContent: "space-between",
-
-    backgroundColor: "#f8fafc",
-
-    borderRadius: 12,
-
-    padding: 16,
-  },
-
-  switchLabel: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: "500",
-    color: "#0f172a",
-    paddingRight: 12,
+    minHeight: 120,
   },
 
   secaoRevisao: { marginBottom: 20 },
@@ -1630,8 +1462,11 @@ const styles = StyleSheet.create({
 
   linhaInfo: {
     flexDirection: "row",
+
     justifyContent: "space-between",
+
     paddingVertical: 8,
+
     gap: 12,
   },
 
@@ -1685,6 +1520,8 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
   },
 
+  btnFull: { flex: 1 },
+
   btnNextText: { color: "#fff", fontSize: 15, fontWeight: "bold" },
 
   btnFinish: {
@@ -1723,9 +1560,13 @@ const styles = StyleSheet.create({
 
   modalContent: {
     backgroundColor: "#fff",
+
     borderRadius: 16,
+
     padding: 20,
+
     width: "100%",
+
     maxHeight: "70%",
   },
 
@@ -1740,9 +1581,13 @@ const styles = StyleSheet.create({
 
   ufChip: {
     flex: 1,
+
     paddingVertical: 12,
+
     borderRadius: 10,
+
     backgroundColor: "#f1f5f9",
+
     alignItems: "center",
   },
 

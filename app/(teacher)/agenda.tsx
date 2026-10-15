@@ -1,259 +1,413 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, Image } from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { Calendar, LocaleConfig } from 'react-native-calendars';
+import { useCallback, useRef, useState } from "react";
 
-// Configurar locale para PT-BR
-LocaleConfig.locales['pt-br'] = {
-  monthNames: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
-  monthNamesShort: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
-  dayNames: ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'],
-  dayNamesShort: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
-  today: 'Hoje'
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
+
+import { Feather } from "@expo/vector-icons";
+
+import { Calendar, LocaleConfig } from "react-native-calendars";
+
+import { useFocusEffect } from "expo-router";
+
+import { useAuth } from "@/contexts/AuthContext";
+
+import { useAgenda } from "@/hooks/useAgenda";
+
+import { useAgendaDias } from "@/hooks/useAgendaDias";
+
+import WeekStrip from "@/components/agenda/WeekStrip";
+
+import { AulaCard, AusenciaCard } from "@/components/agenda/AgendaCards";
+
+import AulaSheet from "@/components/agenda/AulaSheet";
+
+import AusenciaSheet from "@/components/agenda/AusenciaSheet";
+
+import DefinirAusenciaSheet from "@/components/agenda/DefinirAusenciaSheet";
+
+import { Agendamento, Ausencia } from "@/types/agenda";
+
+import { formatarDataExtensa } from "@/utils/utils";
+
+LocaleConfig.locales["pt-br"] = {
+  monthNames: [
+    "Janeiro",
+    "Fevereiro",
+    "Março",
+    "Abril",
+    "Maio",
+    "Junho",
+
+    "Julho",
+    "Agosto",
+    "Setembro",
+    "Outubro",
+    "Novembro",
+    "Dezembro",
+  ],
+
+  monthNamesShort: [
+    "Jan",
+    "Fev",
+    "Mar",
+    "Abr",
+    "Mai",
+    "Jun",
+    "Jul",
+    "Ago",
+    "Set",
+    "Out",
+    "Nov",
+    "Dez",
+  ],
+
+  dayNames: [
+    "Domingo",
+    "Segunda",
+    "Terça",
+    "Quarta",
+    "Quinta",
+    "Sexta",
+    "Sábado",
+  ],
+
+  dayNamesShort: ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"],
+
+  today: "Hoje",
 };
-LocaleConfig.defaultLocale = 'pt-br';
 
-const mockClasses = [
-  { id: '1', time: '08:00', type: 'Pilates', instructor: 'Flavia', students: 5 },
-  { id: '2', time: '09:00', type: 'Fisioterapia', instructor: 'Claudia', students: 3 },
-  { id: '3', time: '10:00', type: 'Pilates', instructor: 'Mariana', students: 4 },
-  { id: '4', time: '14:00', type: 'Pilates', instructor: 'Flavia', students: 6 },
-  { id: '5', time: '15:00', type: 'RPG', instructor: 'Flavia', students: 2 },
-  { id: '6', time: '16:00', type: 'Fisioterapia', instructor: 'Mariana', students: 8 },
-];
+LocaleConfig.defaultLocale = "pt-br";
 
-const daysOfWeek = [
-  { id: '1', day: 'Seg', date: '12' },
-  { id: '2', day: 'Ter', date: '13', active: true },
-  { id: '3', day: 'Qua', date: '14' },
-  { id: '4', day: 'Qui', date: '15' },
-  { id: '5', day: 'Sex', date: '16' },
-  { id: '6', day: 'Sáb', date: '17' },
-];
+export default function AgendaProfessorScreen() {
+  const { user } = useAuth();
 
-export default function CalendarScreen() {
-  const [showFullCalendar, setShowFullCalendar] = useState(false);
+  const { agendamentos, ausencias, loading, erro, recarregar } = useAgenda({
+    professorFixo: user?.id,
+  });
 
-  const getPillStyle = (type: string) => {
-    switch (type) {
-      case 'Pilates':
-        return { bg: '#f77433', text: '#fff' }; // Laranja
-      case 'Fisioterapia':
-        return { bg: '#3b82f6', text: '#fff' }; // Azul
-      case 'RPG':
-        return { bg: '#22c55e', text: '#fff' }; // Verde
-      default:
-        return { bg: '#e2e8f0', text: '#475569' }; // Default Cinza
-    }
-  };
+  const {
+    diaSelecionado,
 
-  const renderItem = ({ item }: { item: any }) => {
-    const pill = getPillStyle(item.type);
+    setDiaSelecionado,
 
-    return (
-      <TouchableOpacity style={styles.classCard} activeOpacity={0.8}>
-        <View style={styles.timeContainer}>
-          <Text style={styles.timeText}>{item.time}</Text>
-        </View>
-        <View style={styles.infoContainer}>
-          <View style={[styles.typePill, { backgroundColor: pill.bg }]}>
-            <Text style={[styles.typeText, { color: pill.text }]}>{item.type}</Text>
-          </View>
-          <Text style={styles.instructor}>Prof: {item.instructor}</Text>
-        </View>
-        <View style={styles.studentsContainer}>
-          <Feather name="users" size={16} color="#6b7280" />
-          <Text style={styles.studentsText}>{item.students}</Text>
-        </View>
-      </TouchableOpacity>
-    );
-  };
+    semana,
+
+    setSemana,
+
+    selecionarDia,
+
+    diasComAula,
+
+    itensDoDia,
+
+    markedDates,
+
+    mesAtual,
+
+    totalAulas,
+  } = useAgendaDias(agendamentos, ausencias);
+
+  const [mesAberto, setMesAberto] = useState(false);
+
+  const [aulaSelecionada, setAulaSelecionada] = useState<Agendamento | null>(
+    null,
+  );
+
+  const [ausenciaSelecionada, setAusenciaSelecionada] =
+    useState<Ausencia | null>(null);
+
+  const [definindoAusencia, setDefinindoAusencia] = useState(false);
+
+  const primeiroFoco = useRef(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (primeiroFoco.current) {
+        primeiroFoco.current = false;
+
+        return;
+      }
+
+      recarregar();
+    }, [recarregar]),
+  );
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <Text style={styles.title}>Agenda</Text>
-          <TouchableOpacity 
-            style={styles.monthButton} 
-            onPress={() => setShowFullCalendar(!showFullCalendar)}
+
+          <TouchableOpacity
+            style={styles.monthButton}
+            onPress={() => setMesAberto(!mesAberto)}
           >
-            <Text style={styles.monthButtonText}>Agosto</Text>
-            <Feather name={showFullCalendar ? "chevron-up" : "chevron-down"} size={16} color="#f77433" />
+            <Text style={styles.monthButtonText}>{mesAtual}</Text>
+
+            <Feather
+              name={mesAberto ? "chevron-up" : "chevron-down"}
+              size={16}
+              color="#f77433"
+            />
           </TouchableOpacity>
         </View>
-        
-        {showFullCalendar ? (
+
+        {mesAberto ? (
           <Calendar
+            current={diaSelecionado}
+            markedDates={markedDates}
+            markingType="multi-dot"
+            firstDay={1}
+            hideExtraDays
             theme={{
-              todayTextColor: '#f77433',
-              arrowColor: '#f77433',
-              selectedDayBackgroundColor: '#f77433',
-              dotColor: '#f77433',
+              todayTextColor: "#f77433",
+
+              arrowColor: "#f77433",
+
+              selectedDayBackgroundColor: "#f77433",
             }}
-            onDayPress={(day: any) => {
-              setShowFullCalendar(false); // Fecha o calendário após selecionar
+            onDayPress={(day: { dateString: string }) => {
+              selecionarDia(day.dateString);
+
+              setMesAberto(false);
             }}
             style={styles.fullCalendar}
           />
         ) : (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.daysContainer}>
-            {daysOfWeek.map((d) => (
-              <View key={d.id} style={[styles.dayCard, d.active && styles.dayCardActive]}>
-                <Text style={[styles.dayText, d.active && styles.dayTextActive]}>{d.day}</Text>
-                <Text style={[styles.dateText, d.active && styles.dateTextActive]}>{d.date}</Text>
-              </View>
-            ))}
-          </ScrollView>
+          <WeekStrip
+            semana={semana}
+            diaSelecionado={diaSelecionado}
+            diasComAula={diasComAula}
+            onSelecionarDia={setDiaSelecionado}
+            onMudarSemana={setSemana}
+          />
         )}
       </View>
 
-      <FlatList
-        data={mockClasses}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
+      <View style={styles.listaHeader}>
+        <Text style={styles.listaTitulo}>
+          {formatarDataExtensa(diaSelecionado)}
+        </Text>
+
+        <Text style={styles.listaContagem}>
+          {totalAulas} {totalAulas === 1 ? "aula" : "aulas"}
+        </Text>
+      </View>
+
+      {loading ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color="#f77433" />
+        </View>
+      ) : erro ? (
+        <View style={styles.center}>
+          <Feather name="wifi-off" size={32} color="#cbd5e1" />
+
+          <Text style={styles.vazioTexto}>{erro}</Text>
+
+          <TouchableOpacity style={styles.retryBtn} onPress={recarregar}>
+            <Text style={styles.retryText}>Tentar novamente</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={itensDoDia}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item }) =>
+            item.tipo === "aula" ? (
+              <AulaCard
+                agendamento={item.agendamento}
+                onPress={() => setAulaSelecionada(item.agendamento)}
+              />
+            ) : (
+              <AusenciaCard
+                ausencia={item.ausencia}
+                onPress={() => setAusenciaSelecionada(item.ausencia)}
+              />
+            )
+          }
+          ListEmptyComponent={
+            <View style={styles.center}>
+              <Feather name="calendar" size={32} color="#cbd5e1" />
+
+              <Text style={styles.vazioTexto}>Nenhuma aula neste dia.</Text>
+            </View>
+          }
+        />
+      )}
+
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => setDefinindoAusencia(true)}
+        activeOpacity={0.85}
+      >
+        <Feather name="slash" size={20} color="#fff" />
+
+        <Text style={styles.fabTexto}>Ausência</Text>
+      </TouchableOpacity>
+
+      {/* Professor não edita nem exclui aula: só consulta e registra observações. */}
+
+      <AulaSheet
+        visible={!!aulaSelecionada}
+        agendamento={aulaSelecionada}
+        podeEditar={false}
+        onFechar={() => setAulaSelecionada(null)}
+        onEditar={() => {}}
+        onAlterado={recarregar}
+      />
+
+      <AusenciaSheet
+        visible={!!ausenciaSelecionada}
+        ausencia={ausenciaSelecionada}
+        podeExcluir
+        onFechar={() => setAusenciaSelecionada(null)}
+        onExcluida={recarregar}
+      />
+
+      <DefinirAusenciaSheet
+        visible={definindoAusencia}
+        professores={[]}
+        professorFixo={user?.id}
+        onFechar={() => setDefinindoAusencia(false)}
+        onCriada={recarregar}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
+  container: { flex: 1, backgroundColor: "#f8fafc" },
+
   header: {
-    padding: 24,
-    backgroundColor: '#fff',
+    paddingHorizontal: 20,
+
+    paddingTop: 18,
+
+    paddingBottom: 14,
+
+    backgroundColor: "#fff",
+
     borderBottomWidth: 1,
-    borderColor: '#e5e7eb',
+
+    borderColor: "#f1f5f9",
   },
+
   headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
+    flexDirection: "row",
+
+    justifyContent: "space-between",
+
+    alignItems: "center",
+
+    marginBottom: 14,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0f172a',
-  },
+
+  title: { fontSize: 24, fontWeight: "800", color: "#0f172a" },
+
   monthButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff3eb',
+    flexDirection: "row",
+
+    alignItems: "center",
+
+    backgroundColor: "#fff3eb",
+
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+
+    paddingVertical: 7,
+
+    borderRadius: 10,
+
+    gap: 4,
   },
-  monthButtonText: {
-    color: '#f77433',
-    fontWeight: 'bold',
-    marginRight: 4,
-    fontSize: 14,
+
+  monthButtonText: { color: "#f77433", fontWeight: "bold", fontSize: 13.5 },
+
+  fullCalendar: { borderRadius: 12 },
+
+  listaHeader: {
+    flexDirection: "row",
+
+    alignItems: "center",
+
+    justifyContent: "space-between",
+
+    paddingHorizontal: 20,
+
+    paddingTop: 18,
+
+    paddingBottom: 10,
   },
-  fullCalendar: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
+
+  listaTitulo: { fontSize: 15, fontWeight: "700", color: "#0f172a" },
+
+  listaContagem: { fontSize: 12.5, color: "#94a3b8", fontWeight: "600" },
+
+  listContent: { paddingHorizontal: 20, paddingBottom: 100 },
+
+  center: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 48,
+    gap: 10,
   },
-  daysContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  dayCard: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 56,
-    height: 72,
-    borderRadius: 16,
-    backgroundColor: '#f1f5f9',
-    marginRight: 12,
-  },
-  dayCardActive: {
-    backgroundColor: '#f77433',
-  },
-  dayText: {
-    fontSize: 13,
-    color: '#64748b',
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  dayTextActive: {
-    color: '#fff',
-    opacity: 0.9,
-  },
-  dateText: {
-    fontSize: 18,
-    color: '#0f172a',
-    fontWeight: 'bold',
-  },
-  dateTextActive: {
-    color: '#fff',
-  },
-  listContent: {
-    padding: 24,
-  },
-  classCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
-  },
-  timeContainer: {
-    backgroundColor: '#f8fafc',
-    paddingVertical: 12,
+
+  vazioTexto: { fontSize: 14, color: "#94a3b8", textAlign: "center" },
+
+  retryBtn: {
+    marginTop: 4,
+
     paddingHorizontal: 16,
-    borderRadius: 12,
-    marginRight: 16,
+
+    paddingVertical: 9,
+
+    borderRadius: 10,
+
+    backgroundColor: "#fff3eb",
   },
-  timeText: {
-    color: '#0f172a',
-    fontWeight: 'bold',
-    fontSize: 16,
+
+  retryText: { color: "#f77433", fontWeight: "700", fontSize: 13 },
+
+  fab: {
+    position: "absolute",
+
+    right: 20,
+
+    bottom: 24,
+
+    flexDirection: "row",
+
+    alignItems: "center",
+
+    gap: 8,
+
+    paddingHorizontal: 18,
+
+    height: 52,
+
+    borderRadius: 26,
+
+    backgroundColor: "#f77433",
+
+    justifyContent: "center",
+
+    shadowColor: "#f77433",
+
+    shadowOffset: { width: 0, height: 4 },
+
+    shadowOpacity: 0.4,
+
+    shadowRadius: 10,
+
+    elevation: 6,
   },
-  infoContainer: {
-    flex: 1,
-    alignItems: 'flex-start',
-  },
-  typePill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    marginBottom: 6,
-  },
-  typeText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  instructor: {
-    fontSize: 14,
-    color: '#64748b',
-    fontWeight: '500',
-  },
-  studentsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f1f5f9',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  studentsText: {
-    marginLeft: 6,
-    fontWeight: '600',
-    color: '#475569',
-  }
+
+  fabTexto: { color: "#fff", fontWeight: "bold", fontSize: 14.5 },
 });
