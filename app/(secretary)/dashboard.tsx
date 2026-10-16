@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { Feather } from '@expo/vector-icons';
 import { BarChart } from 'react-native-chart-kit';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function DashboardScreen() {
   const { user } = useAuth();
@@ -20,25 +21,26 @@ export default function DashboardScreen() {
     ],
   };
 
-  const roleLabel =
-    user?.role === 'ADMINISTRADOR'
-      ? 'Administrador'
-      : user?.role === 'PROFESSOR'
-      ? 'Professor'
-      : 'Secretaria';
-
   return (
     <View style={styles.container}>
-      {/* Top Brand Bar integrado e compacto */}
-      <View style={[styles.topBar, { paddingTop: insets.top > 0 ? insets.top + 6 : 14 }]}>
-        <Image
-          source={require('../../assets/logoOriginal.png')}
-          style={styles.brandLogo}
-          resizeMode="contain"
+      {/* Top Brand Bar Laranja com Logo Branca Centralizada e Transição em Gradiente para Baixo */}
+      <View style={styles.headerWrapper}>
+        <LinearGradient
+          colors={['#ea601e', '#f87a3b']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.topBarGradient, { paddingTop: insets.top > 0 ? insets.top + 8 : 16 }]}
+        >
+          <Image
+            source={require('../../assets/logoBranca.png')}
+            style={styles.brandLogo}
+            resizeMode="contain"
+          />
+        </LinearGradient>
+        <LinearGradient
+          colors={['rgba(234, 96, 30, 0.25)', 'rgba(234, 96, 30, 0.06)', 'transparent']}
+          style={styles.bottomTransitionGlow}
         />
-        <View style={styles.roleBadge}>
-          <Text style={styles.roleBadgeText}>{roleLabel}</Text>
-        </View>
       </View>
 
       <ScrollView
@@ -143,30 +145,31 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8fafc',
   },
-  topBar: {
-    flexDirection: 'row',
+  headerWrapper: {
+    width: '100%',
+    backgroundColor: 'transparent',
+    zIndex: 10,
+  },
+  topBarGradient: {
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 10,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    paddingBottom: 14,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    shadowColor: '#ea601e',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
+    elevation: 6,
   },
   brandLogo: {
-    width: 110,
-    height: 28,
+    width: 130,
+    height: 32,
   },
-  roleBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    backgroundColor: '#fff3eb',
-  },
-  roleBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#f77433',
+  bottomTransitionGlow: {
+    height: 12,
+    width: '100%',
   },
   scroll: {
     flex: 1,
