@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-
 import {
   View,
   Text,
@@ -8,7 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
-
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 
 import { Calendar, LocaleConfig } from "react-native-calendars";
@@ -88,7 +87,7 @@ LocaleConfig.defaultLocale = "pt-br";
 
 export default function AgendaSecretariaScreen() {
   const router = useRouter();
-
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
     idProfessor?: string;
     idSala?: string;
@@ -208,7 +207,7 @@ export default function AgendaSecretariaScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top > 0 ? insets.top + 6 : 14 }]}>
         <View style={styles.headerTop}>
           <Text style={styles.title}>Agenda</Text>
 
@@ -462,30 +461,21 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f8fafc" },
 
   header: {
-    paddingHorizontal: 20,
-
-    paddingTop: 18,
-
-    paddingBottom: 14,
-
+    paddingHorizontal: 16,
+    paddingBottom: 10,
     backgroundColor: "#fff",
-
     borderBottomWidth: 1,
-
     borderColor: "#f1f5f9",
   },
 
   headerTop: {
     flexDirection: "row",
-
     justifyContent: "space-between",
-
     alignItems: "center",
-
-    marginBottom: 14,
+    marginBottom: 10,
   },
 
-  title: { fontSize: 24, fontWeight: "800", color: "#0f172a" },
+  title: { fontSize: 20, fontWeight: "800", color: "#0f172a" },
 
   monthButton: {
     flexDirection: "row",
