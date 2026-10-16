@@ -643,16 +643,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#ffffff",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#f1f5f9",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 4,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: "transparent",
   },
 
   paginationInfo: {
@@ -669,34 +662,25 @@ const styles = StyleSheet.create({
   paginationControls: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 4,
   },
 
   pageBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: "#fff3eb",
+    width: 32,
+    height: 32,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#fed7aa",
   },
 
   pageBtnDisabled: {
-    backgroundColor: "#f8fafc",
-    borderColor: "#f1f5f9",
+    opacity: 0.3,
   },
 
   pageLabelPill: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: "#f8fafc",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
+    paddingHorizontal: 6,
+    paddingVertical: 4,
     gap: 4,
   },
 
