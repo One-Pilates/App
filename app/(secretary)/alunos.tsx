@@ -356,54 +356,56 @@ export default function AlunosScreen() {
           ListEmptyComponent={
             <Text style={styles.empty}>Nenhum aluno encontrado.</Text>
           }
-          ListFooterComponent={
-            alunos.length > 0 ? (
-              <View style={styles.pagination}>
-                <Text style={styles.paginationInfo}>
-                  {startIndex}–{endIndex} de {totalRegistros}
-                </Text>
-
-                <View style={styles.paginationControls}>
-                  <TouchableOpacity
-                    style={[
-                      styles.pageBtn,
-                      page === 1 && styles.pageBtnDisabled,
-                    ]}
-                    disabled={page === 1}
-                    onPress={() => setPage((p) => Math.max(1, p - 1))}
-                  >
-                    <Feather
-                      name="arrow-left"
-                      size={18}
-                      color={page === 1 ? "#cbd5e1" : "#334155"}
-                    />
-                  </TouchableOpacity>
-
-                  <Text style={styles.pageLabel}>
-                    {page} / {totalPaginas}
-                  </Text>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.pageBtn,
-                      page >= totalPaginas && styles.pageBtnDisabled,
-                    ]}
-                    disabled={page >= totalPaginas}
-                    onPress={() =>
-                      setPage((p) => Math.min(totalPaginas, p + 1))
-                    }
-                  >
-                    <Feather
-                      name="arrow-right"
-                      size={18}
-                      color={page >= totalPaginas ? "#cbd5e1" : "#334155"}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : null
-          }
         />
+      )}
+
+      {/* Barra de Paginação Fixa na Base da Tela (Acima das Tabs) */}
+      {!loading && totalRegistros > 0 && (
+        <View style={styles.bottomPaginationBar}>
+          <Text style={styles.paginationInfo}>
+            {startIndex}–{endIndex} de <Text style={styles.paginationHighlight}>{totalRegistros}</Text> alunos
+          </Text>
+
+          <View style={styles.paginationControls}>
+            <TouchableOpacity
+              style={[
+                styles.pageBtn,
+                page === 1 && styles.pageBtnDisabled,
+              ]}
+              disabled={page === 1}
+              onPress={() => setPage((p) => Math.max(1, p - 1))}
+              activeOpacity={0.7}
+            >
+              <Feather
+                name="chevron-left"
+                size={18}
+                color={page === 1 ? "#cbd5e1" : "#f77433"}
+              />
+            </TouchableOpacity>
+
+            <View style={styles.pageLabelPill}>
+              <Text style={styles.pageLabelCurrent}>{page}</Text>
+              <Text style={styles.pageLabelDivider}>/</Text>
+              <Text style={styles.pageLabelTotal}>{totalPaginas}</Text>
+            </View>
+
+            <TouchableOpacity
+              style={[
+                styles.pageBtn,
+                page >= totalPaginas && styles.pageBtnDisabled,
+              ]}
+              disabled={page >= totalPaginas}
+              onPress={() => setPage((p) => Math.min(totalPaginas, p + 1))}
+              activeOpacity={0.7}
+            >
+              <Feather
+                name="chevron-right"
+                size={18}
+                color={page >= totalPaginas ? "#cbd5e1" : "#f77433"}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
       )}
     </View>
   );
@@ -495,7 +497,7 @@ const styles = StyleSheet.create({
 
   filterChipTextActive: { color: "#fff" },
 
-  listContent: { padding: 24 },
+  listContent: { padding: 16, paddingBottom: 24 },
 
   empty: {
     textAlign: "center",
@@ -637,37 +639,82 @@ const styles = StyleSheet.create({
     borderColor: "#f1f5f9",
   },
 
-  pagination: { alignItems: "center", gap: 12, paddingVertical: 12 },
+  bottomPaginationBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#ffffff",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#f1f5f9",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 4,
+  },
 
   paginationInfo: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#94a3b8",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+    fontSize: 13,
+    color: "#64748b",
+    fontWeight: "500",
   },
 
-  paginationControls: { flexDirection: "row", alignItems: "center", gap: 16 },
+  paginationHighlight: {
+    color: "#0f172a",
+    fontWeight: "700",
+  },
+
+  paginationControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
 
   pageBtn: {
-    width: 40,
-
-    height: 40,
-
-    borderRadius: 12,
-
-    backgroundColor: "#fff",
-
-    borderWidth: 1,
-
-    borderColor: "#e2e8f0",
-
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "#fff3eb",
     justifyContent: "center",
-
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#fed7aa",
   },
 
-  pageBtnDisabled: { opacity: 0.5 },
+  pageBtnDisabled: {
+    backgroundColor: "#f8fafc",
+    borderColor: "#f1f5f9",
+  },
 
-  pageLabel: { fontSize: 14, fontWeight: "700", color: "#334155" },
+  pageLabelPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: "#f8fafc",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    gap: 4,
+  },
+
+  pageLabelCurrent: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#f77433",
+  },
+
+  pageLabelDivider: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#94a3b8",
+  },
+
+  pageLabelTotal: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#475569",
+  },
 });
