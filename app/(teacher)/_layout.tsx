@@ -22,20 +22,7 @@ export default function TeacherLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: true,
-        headerTitle: () => (
-          <Image
-            source={require('../../assets/logoBranca.png')}
-            style={{ width: 120, height: 40, resizeMode: 'contain' }}
-          />
-        ),
-        headerTitleAlign: 'center',
-        headerStyle: {
-          backgroundColor: '#f77433',
-          elevation: 0,
-          shadowOpacity: 0,
-          borderBottomWidth: 0,
-        },
+        headerShown: false,
         tabBarActiveTintColor: '#f77433',
         tabBarInactiveTintColor: '#94a3b8',
         tabBarStyle: {
