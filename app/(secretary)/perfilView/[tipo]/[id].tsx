@@ -10,6 +10,7 @@ TouchableOpacity,
 ActivityIndicator,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '@/services/api';
@@ -62,8 +63,8 @@ return (
 }
 
 export default function PerfilView() {
-
 const router = useRouter();
+const insets = useSafeAreaInsets();
 const { tipo: tipoParam, id } = useLocalSearchParams<{ tipo: string; id: string }>();
 const tipo = (tipoParam as Tipo) || 'aluno';
 
@@ -146,7 +147,7 @@ const numeroVisivel = endereco.numero && endereco.numero !== '0' ? endereco.nume
 return (
 <ScrollView
 style={styles.container}
-contentContainerStyle={styles.content}
+contentContainerStyle={[styles.content, { paddingTop: insets.top > 0 ? insets.top + 10 : 20 }]}
 showsVerticalScrollIndicator={false}
 >
 {/* Header */}
@@ -304,7 +305,7 @@ styles.boolBadgeText,
 const styles = StyleSheet.create({
 
 container: { flex: 1, backgroundColor: '#f8fafc' },
-content: { padding: 20, paddingTop: 20, paddingBottom: 60 },
+content: { paddingHorizontal: 16, paddingBottom: 40 },
 center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc' },
 notFound: { fontSize: 16, fontWeight: '600', color: '#e11d48', marginBottom: 12 },
 backLink: { flexDirection: 'row', alignItems: 'center', gap: 6 },

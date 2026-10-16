@@ -27,7 +27,7 @@ import {
 } from 'react-native'; 
 
 import { Feather } from '@expo/vector-icons'; 
-
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router'; 
 
 import api from '@/services/api'; 
@@ -105,9 +105,8 @@ function nomeEsp(esp: string | { nome: string }): string {
  
 
 export default function StudioScreen() { 
-
   const router = useRouter(); 
-
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<Tab>('especialidades'); 
 
   const [especialidades, setEspecialidades] = useState<Especialidade[]>([]); 
@@ -507,17 +506,11 @@ export default function StudioScreen() {
     <View style={styles.container}> 
 
       {/* Header */} 
-
-      <View style={styles.header}> 
-
+      <View style={[styles.header, { paddingTop: insets.top > 0 ? insets.top + 6 : 14 }]}> 
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}> 
-
           <Feather name="arrow-left" size={22} color="#0f172a" /> 
-
         </TouchableOpacity> 
-
         <Text style={styles.pageTitle}>Configurações do Studio</Text> 
-
       </View> 
 
  
@@ -1011,17 +1004,10 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' }, 
 
   header: { 
-
     flexDirection: 'row', 
-
     alignItems: 'center', 
-
-    paddingHorizontal: 20, 
-
-    paddingTop: 16, 
-
-    paddingBottom: 12, 
-
+    paddingHorizontal: 16, 
+    paddingBottom: 8, 
   }, 
 
   backButton: { 

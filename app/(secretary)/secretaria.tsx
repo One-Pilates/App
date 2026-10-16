@@ -13,7 +13,7 @@ import {
 } from "react-native";
 
 import { Feather } from "@expo/vector-icons";
-
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -44,7 +44,7 @@ interface Secretaria {
 
 export default function GerenciamentoSecretaria() {
   const router = useRouter();
-
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
 
   const isAdmin = (user?.role || "").toUpperCase() === "ADMINISTRADOR";
@@ -295,7 +295,7 @@ export default function GerenciamentoSecretaria() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top > 0 ? insets.top + 6 : 14 }]}>
         <View style={styles.headerTop}>
           <TouchableOpacity
             style={styles.backButton}
@@ -361,13 +361,14 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
 
   header: {
-    padding: 20,
+    paddingHorizontal: 16,
+    paddingBottom: 10,
     backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderColor: "#e5e7eb",
   },
 
-  headerTop: { flexDirection: "row", alignItems: "center", marginBottom: 14 },
+  headerTop: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
 
   backButton: {
     width: 40,

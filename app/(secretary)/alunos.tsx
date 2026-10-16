@@ -13,6 +13,7 @@ import {
 } from "react-native";
 
 import { Feather } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useFocusEffect, useRouter } from "expo-router";
 
@@ -58,6 +59,7 @@ function calcularIdade(dataNascimento?: string): number | null {
 
 export default function AlunosScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const [alunos, setAlunos] = useState<Aluno[]>([]);
 
@@ -282,7 +284,7 @@ export default function AlunosScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top > 0 ? insets.top + 6 : 14 }]}>
         <View style={styles.headerTop}>
           <Text style={styles.title}>Alunos</Text>
 
@@ -413,26 +415,21 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
 
   header: {
-    padding: 24,
-
+    paddingHorizontal: 16,
+    paddingBottom: 10,
     backgroundColor: "#fff",
-
     borderBottomWidth: 1,
-
     borderColor: "#e5e7eb",
   },
 
   headerTop: {
     flexDirection: "row",
-
     alignItems: "center",
-
     justifyContent: "space-between",
-
-    marginBottom: 12,
+    marginBottom: 10,
   },
 
-  title: { fontSize: 24, fontWeight: "800", color: "#0f172a" },
+  title: { fontSize: 20, fontWeight: "800", color: "#0f172a" },
 
   addButton: {
     backgroundColor: "#f77433",
