@@ -1,11 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions, Image } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { Feather } from '@expo/vector-icons';
 import { BarChart } from 'react-native-chart-kit';
 
 export default function DashboardScreen() {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   
   const screenWidth = Dimensions.get('window').width;
 
@@ -18,131 +20,184 @@ export default function DashboardScreen() {
     ],
   };
 
+  const roleLabel =
+    user?.role === 'ADMINISTRADOR'
+      ? 'Administrador'
+      : user?.role === 'PROFESSOR'
+      ? 'Professor'
+      : 'Secretaria';
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <Text style={styles.pageTitle}>Visão Geral</Text>
-
-      <View style={styles.kpiGrid}>
-        {/* Card 1: Sessões Realizadas */}
-        <View style={styles.kpiCard}>
-          <View style={styles.kpiHeader}>
-            <View style={[styles.iconWrapper, { backgroundColor: '#d8b4fe' }]}>
-              <Feather name="activity" size={20} color="#fff" />
-            </View>
-            <Text style={styles.kpiValue}>112</Text>
-          </View>
-          <Text style={styles.kpiLabel}>Sessões Realizadas</Text>
-        </View>
-
-        {/* Card 2: Alunos Atendidos */}
-        <View style={styles.kpiCard}>
-          <View style={styles.kpiHeader}>
-            <View style={[styles.iconWrapper, { backgroundColor: '#fdba74' }]}>
-              <Feather name="users" size={20} color="#fff" />
-            </View>
-            <Text style={styles.kpiValue}>68</Text>
-          </View>
-          <Text style={styles.kpiLabel}>Alunos Atendidos</Text>
-        </View>
-
-        {/* Card 3: Dia com Maior Atendimento */}
-        <View style={styles.kpiCard}>
-          <View style={styles.kpiHeader}>
-            <View style={[styles.iconWrapper, { backgroundColor: '#93c5fd' }]}>
-              <Feather name="calendar" size={20} color="#fff" />
-            </View>
-            <Text style={styles.kpiValue}>Terça</Text>
-          </View>
-          <Text style={styles.kpiLabel}>Dia c/ Maior Atendimento</Text>
-        </View>
-
-        {/* Card 4: Novos Alunos */}
-        <View style={styles.kpiCard}>
-          <View style={styles.kpiHeader}>
-            <View style={[styles.iconWrapper, { backgroundColor: '#a7f3d0' }]}>
-              <Feather name="trending-up" size={20} color="#fff" />
-            </View>
-            <Text style={styles.kpiValue}>+12</Text>
-          </View>
-          <Text style={styles.kpiLabel}>Novos Alunos</Text>
-        </View>
-      </View>
-
-      <Text style={styles.sectionTitle}>Sessões Agendadas na Semana</Text>
-      <View style={styles.chartPlaceholder}>
-        <BarChart
-          data={chartData}
-          width={screenWidth - 96} // content padding (24*2) + card padding (24*2) = 96
-          height={220}
-          yAxisLabel=""
-          yAxisSuffix=""
-          fromZero={true}
-          showValuesOnTopOfBars={true}
-          withHorizontalLabels={false} // Remover as labels laterais para economizar espaço se estiver cortando
-          chartConfig={{
-            backgroundColor: '#fff',
-            backgroundGradientFrom: '#fff',
-            backgroundGradientTo: '#fff',
-            fillShadowGradient: '#f77433',
-            fillShadowGradientOpacity: 0.8,
-            decimalPlaces: 0,
-            color: (opacity = 1) => `rgba(247, 116, 51, ${opacity})`,
-            labelColor: (opacity = 1) => `rgba(100, 116, 139, ${opacity})`,
-            style: {
-              borderRadius: 16,
-            },
-            propsForBackgroundLines: {
-              strokeWidth: 1,
-              stroke: '#f1f5f9',
-              strokeDasharray: '0',
-            },
-            barPercentage: 0.6,
-          }}
-          style={{
-            marginVertical: 8,
-            borderRadius: 16,
-            paddingRight: 0,
-            paddingLeft: 0,
-          }}
+    <View style={styles.container}>
+      {/* Top Brand Bar integrado e compacto */}
+      <View style={[styles.topBar, { paddingTop: insets.top > 0 ? insets.top + 6 : 14 }]}>
+        <Image
+          source={require('../../assets/logoOriginal.png')}
+          style={styles.brandLogo}
+          resizeMode="contain"
         />
-        <Text style={styles.chartSubtitle}>Seg - Sex (Mock)</Text>
+        <View style={styles.roleBadge}>
+          <Text style={styles.roleBadgeText}>{roleLabel}</Text>
+        </View>
       </View>
-    </ScrollView>
+
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.pageTitle}>Visão Geral</Text>
+
+        <View style={styles.kpiGrid}>
+          {/* Card 1: Sessões Realizadas */}
+          <View style={styles.kpiCard}>
+            <View style={styles.kpiHeader}>
+              <View style={[styles.iconWrapper, { backgroundColor: '#d8b4fe' }]}>
+                <Feather name="activity" size={18} color="#fff" />
+              </View>
+              <Text style={styles.kpiValue}>112</Text>
+            </View>
+            <Text style={styles.kpiLabel}>Sessões Realizadas</Text>
+          </View>
+
+          {/* Card 2: Alunos Atendidos */}
+          <View style={styles.kpiCard}>
+            <View style={styles.kpiHeader}>
+              <View style={[styles.iconWrapper, { backgroundColor: '#fdba74' }]}>
+                <Feather name="users" size={18} color="#fff" />
+              </View>
+              <Text style={styles.kpiValue}>68</Text>
+            </View>
+            <Text style={styles.kpiLabel}>Alunos Atendidos</Text>
+          </View>
+
+          {/* Card 3: Dia com Maior Atendimento */}
+          <View style={styles.kpiCard}>
+            <View style={styles.kpiHeader}>
+              <View style={[styles.iconWrapper, { backgroundColor: '#93c5fd' }]}>
+                <Feather name="calendar" size={18} color="#fff" />
+              </View>
+              <Text style={styles.kpiValue}>Terça</Text>
+            </View>
+            <Text style={styles.kpiLabel}>Dia c/ Maior Atendimento</Text>
+          </View>
+
+          {/* Card 4: Novos Alunos */}
+          <View style={styles.kpiCard}>
+            <View style={styles.kpiHeader}>
+              <View style={[styles.iconWrapper, { backgroundColor: '#a7f3d0' }]}>
+                <Feather name="trending-up" size={18} color="#fff" />
+              </View>
+              <Text style={styles.kpiValue}>+12</Text>
+            </View>
+            <Text style={styles.kpiLabel}>Novos Alunos</Text>
+          </View>
+        </View>
+
+        <Text style={styles.sectionTitle}>Sessões Agendadas na Semana</Text>
+        <View style={styles.chartPlaceholder}>
+          <BarChart
+            data={chartData}
+            width={screenWidth - 64} // 16px lateral container + 16px lateral card
+            height={200}
+            yAxisLabel=""
+            yAxisSuffix=""
+            fromZero={true}
+            showValuesOnTopOfBars={true}
+            withHorizontalLabels={false}
+            chartConfig={{
+              backgroundColor: '#fff',
+              backgroundGradientFrom: '#fff',
+              backgroundGradientTo: '#fff',
+              fillShadowGradient: '#f77433',
+              fillShadowGradientOpacity: 0.8,
+              decimalPlaces: 0,
+              color: (opacity = 1) => `rgba(247, 116, 51, ${opacity})`,
+              labelColor: (opacity = 1) => `rgba(100, 116, 139, ${opacity})`,
+              style: {
+                borderRadius: 16,
+              },
+              propsForBackgroundLines: {
+                strokeWidth: 1,
+                stroke: '#f1f5f9',
+                strokeDasharray: '0',
+              },
+              barPercentage: 0.6,
+            }}
+            style={{
+              marginVertical: 4,
+              borderRadius: 16,
+              paddingRight: 0,
+              paddingLeft: 0,
+            }}
+          />
+          <Text style={styles.chartSubtitle}>Seg - Sex (Semanal)</Text>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc', // slate-50
+    backgroundColor: '#f8fafc',
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  brandLogo: {
+    width: 110,
+    height: 28,
+  },
+  roleBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: '#fff3eb',
+  },
+  roleBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#f77433',
+  },
+  scroll: {
+    flex: 1,
   },
   content: {
-    padding: 24,
-    paddingTop: 32,
-    paddingBottom: 60,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 40,
   },
   pageTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '800',
     color: '#0f172a',
-    marginBottom: 20,
+    marginBottom: 14,
   },
   kpiGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   kpiCard: {
     backgroundColor: '#fff',
     width: '48%',
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 16,
+    padding: 14,
+    borderRadius: 14,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 8,
+    shadowRadius: 6,
     elevation: 2,
     borderWidth: 1,
     borderColor: '#f1f5f9',
