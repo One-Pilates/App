@@ -18,7 +18,7 @@ import {
 } from "react-native";
 
 import { Feather } from "@expo/vector-icons";
-
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 
 import * as ImagePicker from "expo-image-picker";
@@ -134,6 +134,7 @@ export default function CollaboratorForm({
   role?: string;
 }) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const roleNormalizado = (roleParam || "").toUpperCase();
 
@@ -600,8 +601,7 @@ export default function CollaboratorForm({
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       {/* Header */}
-
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top > 0 ? insets.top + 6 : 14 }]}>
         <View style={styles.headerTop}>
           <TouchableOpacity
             style={styles.backButton}

@@ -14,7 +14,7 @@ import {
 } from "react-native";
 
 import { Feather } from "@expo/vector-icons";
-
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 
 import * as ImagePicker from "expo-image-picker";
@@ -145,8 +145,8 @@ function formatarDataBr(iso?: string): string {
 
 export default function ProfileScreen() {
   const { user, updateUser, logout } = useAuth();
-
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const [userData, setUserData] = useState<UserForm>(emptyForm);
 
@@ -559,7 +559,7 @@ export default function ProfileScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top > 0 ? insets.top + 10 : 20 }]}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
@@ -1048,14 +1048,10 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f8fafc" },
-
-  content: { padding: 20, paddingTop: 24, paddingBottom: 60 },
-
+  content: { paddingHorizontal: 16, paddingBottom: 40 },
   header: { marginBottom: 16 },
-
-  pageTitle: { fontSize: 24, fontWeight: "bold", color: "#0f172a" },
-
-  pageSubtitle: { fontSize: 14, color: "#64748b", marginTop: 4 },
+  pageTitle: { fontSize: 20, fontWeight: "800", color: "#0f172a" },
+  pageSubtitle: { fontSize: 13, color: "#64748b", marginTop: 2 },
 
   card: {
     backgroundColor: "#fff",
