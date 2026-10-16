@@ -12,7 +12,7 @@ import { Feather } from "@expo/vector-icons";
 
 import { Calendar, LocaleConfig } from "react-native-calendars";
 
-import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter, useNavigation } from "expo-router";
 
 import { useAgenda } from "@/hooks/useAgenda";
 
@@ -138,6 +138,49 @@ export default function AgendaSecretariaScreen() {
   const [filtroAberto, setFiltroAberto] = useState<"sala" | "professor" | null>(
     null,
   );
+
+  const navigation = useNavigation();
+
+  const sheetAberto = Boolean(
+    aulaSelecionada ||
+    editandoAula ||
+    ausenciaSelecionada ||
+    definindoAusencia ||
+    acoesAbertas ||
+    filtroAberto
+  );
+
+  useEffect(() => {
+    const parent = navigation.getParent();
+    if (sheetAberto) {
+      parent?.setOptions({ tabBarStyle: { display: "none" } });
+      navigation.setOptions({ tabBarStyle: { display: "none" } });
+    } else {
+      const defaultStyle = {
+        backgroundColor: "#fff",
+        borderTopWidth: 1,
+        borderTopColor: "#f1f5f9",
+        height: 60,
+        paddingBottom: 8,
+        paddingTop: 8,
+      };
+      parent?.setOptions({ tabBarStyle: defaultStyle });
+      navigation.setOptions({ tabBarStyle: defaultStyle });
+    }
+
+    return () => {
+      const defaultStyle = {
+        backgroundColor: "#fff",
+        borderTopWidth: 1,
+        borderTopColor: "#f1f5f9",
+        height: 60,
+        paddingBottom: 8,
+        paddingTop: 8,
+      };
+      parent?.setOptions({ tabBarStyle: defaultStyle });
+      navigation.setOptions({ tabBarStyle: defaultStyle });
+    };
+  }, [sheetAberto, navigation]);
 
   const {
     diaSelecionado,

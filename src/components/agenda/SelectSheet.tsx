@@ -49,6 +49,7 @@ export default function SelectSheet({
       visible={visible}
       transparent
       animationType="slide"
+      statusBarTranslucent={true}
       onRequestClose={onFechar}
     >
       <TouchableOpacity

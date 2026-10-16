@@ -89,6 +89,7 @@ export default function GlobalAlertModal() {
       visible={alertData.visible}
       transparent
       animationType="fade"
+      statusBarTranslucent={true}
       onRequestClose={() => handleButtonPress()}
     >
       <View style={styles.overlay}>

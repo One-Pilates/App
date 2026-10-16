@@ -190,6 +190,7 @@ export default function AulaSheet({
       visible={visible}
       transparent
       animationType="slide"
+      statusBarTranslucent={true}
       onRequestClose={onFechar}
     >
       <View style={styles.overlay}>

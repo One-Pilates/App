@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import { Feather } from "@expo/vector-icons";
 
 import { Calendar, LocaleConfig } from "react-native-calendars";
 
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useNavigation } from "expo-router";
 
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -123,6 +123,46 @@ export default function AgendaProfessorScreen() {
     useState<Ausencia | null>(null);
 
   const [definindoAusencia, setDefinindoAusencia] = useState(false);
+
+  const navigation = useNavigation();
+
+  const sheetAberto = Boolean(
+    aulaSelecionada ||
+    ausenciaSelecionada ||
+    definindoAusencia
+  );
+
+  useEffect(() => {
+    const parent = navigation.getParent();
+    if (sheetAberto) {
+      parent?.setOptions({ tabBarStyle: { display: "none" } });
+      navigation.setOptions({ tabBarStyle: { display: "none" } });
+    } else {
+      const defaultStyle = {
+        backgroundColor: "#fff",
+        borderTopWidth: 1,
+        borderTopColor: "#f1f5f9",
+        height: 60,
+        paddingBottom: 8,
+        paddingTop: 8,
+      };
+      parent?.setOptions({ tabBarStyle: defaultStyle });
+      navigation.setOptions({ tabBarStyle: defaultStyle });
+    }
+
+    return () => {
+      const defaultStyle = {
+        backgroundColor: "#fff",
+        borderTopWidth: 1,
+        borderTopColor: "#f1f5f9",
+        height: 60,
+        paddingBottom: 8,
+        paddingTop: 8,
+      };
+      parent?.setOptions({ tabBarStyle: defaultStyle });
+      navigation.setOptions({ tabBarStyle: defaultStyle });
+    };
+  }, [sheetAberto, navigation]);
 
   const primeiroFoco = useRef(true);
 
