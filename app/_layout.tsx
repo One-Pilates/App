@@ -16,7 +16,13 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <StatusBar style="dark" />
-      <Stack screenOptions={{ headerShown: false, animation: "fade" }}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          animation: "fade",
+          animationDuration: 240,
+        }}
+      >
         <Stack.Screen name="index" />
         <Stack.Screen name="(public)" />
         <Stack.Screen name="(secretary)" />

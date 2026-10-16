@@ -1,6 +1,6 @@
 import { Redirect, Tabs } from "expo-router";
 
-import { View, ActivityIndicator, Image } from "react-native";
+import { View, ActivityIndicator, Image, Easing } from "react-native";
 
 import { Feather } from "@expo/vector-icons";
 
@@ -36,6 +36,14 @@ export default function SecretaryLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        animation: "fade",
+        transitionSpec: {
+          animation: "timing",
+          config: {
+            duration: 200,
+            easing: Easing.out(Easing.ease),
+          },
+        },
         tabBarActiveTintColor: "#f77433",
         tabBarInactiveTintColor: "#94a3b8",
         tabBarStyle: {
