@@ -2,15 +2,17 @@ import { Redirect, Tabs } from 'expo-router';
 import { View, ActivityIndicator, Image, Easing } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 // Fluxo de Professor.
 export default function TeacherLayout() {
   const { signed, user, loading } = useAuth();
+  const { colors } = useTheme();
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0f4ff' }}>
-        <ActivityIndicator size="large" color="#f77433" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -31,12 +33,12 @@ export default function TeacherLayout() {
             easing: Easing.out(Easing.ease),
           },
         },
-        tabBarActiveTintColor: '#f77433',
-        tabBarInactiveTintColor: '#94a3b8',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.tabInactive,
         tabBarStyle: {
-          backgroundColor: '#fff',
+          backgroundColor: colors.tabBg,
           borderTopWidth: 1,
-          borderTopColor: '#f1f5f9',
+          borderTopColor: colors.tabBorder,
           height: 60,
           paddingBottom: 8,
           paddingTop: 8,

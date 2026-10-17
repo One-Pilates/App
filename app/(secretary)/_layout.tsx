@@ -5,11 +5,13 @@ import { View, ActivityIndicator, Image, Easing } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 // Fluxo de Secretaria/Administrador (tabs principais + telas internas ocultas).
 
 export default function SecretaryLayout() {
   const { signed, user, loading } = useAuth();
+  const { colors } = useTheme();
 
   if (loading) {
     return (
@@ -18,10 +20,10 @@ export default function SecretaryLayout() {
           flex: 1,
           justifyContent: "center",
           alignItems: "center",
-          backgroundColor: "#f0f4ff",
+          backgroundColor: colors.background,
         }}
       >
-        <ActivityIndicator size="large" color="#f77433" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -44,12 +46,12 @@ export default function SecretaryLayout() {
             easing: Easing.out(Easing.ease),
           },
         },
-        tabBarActiveTintColor: "#f77433",
-        tabBarInactiveTintColor: "#94a3b8",
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.tabInactive,
         tabBarStyle: {
-          backgroundColor: "#fff",
+          backgroundColor: colors.tabBg,
           borderTopWidth: 1,
-          borderTopColor: "#f1f5f9",
+          borderTopColor: colors.tabBorder,
           height: 60,
           paddingBottom: 8,
           paddingTop: 8,

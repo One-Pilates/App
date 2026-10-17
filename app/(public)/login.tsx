@@ -21,14 +21,13 @@ import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, STORAGE_KEY_REMEMBER_SESSION } from "@/contexts/AuthContext";
 import AmbientBackground from "@/components/AmbientBackground";
 import PrimaryButton from "@/components/PrimaryButton";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 const STORAGE_KEY_EMAIL = "@onepilates_saved_email";
-const STORAGE_KEY_REMEMBER = "@onepilates_remember_password";
 
 // Altura segura para a câmera frontal (evita furos na tela como S24+, Pixel, etc.)
 const ANDROID_STATUS_BAR = RNStatusBar.currentHeight || 40;
@@ -94,7 +93,7 @@ export default function LoginScreen() {
     // Carrega credenciais salvas se "Lembrar senha" estiver ativo
     async function loadSavedCredentials() {
       try {
-        const savedRemember = await AsyncStorage.getItem(STORAGE_KEY_REMEMBER);
+        const savedRemember = await AsyncStorage.getItem(STORAGE_KEY_REMEMBER_SESSION);
         if (savedRemember === "true") {
           setRememberPassword(true);
           const savedEmail = await AsyncStorage.getItem(STORAGE_KEY_EMAIL);
@@ -188,17 +187,15 @@ export default function LoginScreen() {
 
     try {
       if (rememberPassword) {
-        await AsyncStorage.setItem(STORAGE_KEY_REMEMBER, "true");
         await AsyncStorage.setItem(STORAGE_KEY_EMAIL, email.trim());
       } else {
-        await AsyncStorage.removeItem(STORAGE_KEY_REMEMBER);
         await AsyncStorage.removeItem(STORAGE_KEY_EMAIL);
       }
     } catch (err) {
       console.warn("Falha ao salvar preferência:", err);
     }
 
-    const result = await login(email.trim(), password);
+    const result = await login(email.trim(), password, rememberPassword);
     setIsLoading(false);
 
     if (!result.success) {
@@ -214,6 +211,8 @@ export default function LoginScreen() {
         pathname: "/(public)/nova-senha",
         params: { email: email.trim(), primeiroAcesso: "1" },
       });
+    } else {
+      router.replace("/");
     }
   };
 

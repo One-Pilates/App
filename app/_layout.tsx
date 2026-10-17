@@ -2,20 +2,19 @@ import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
 import GlobalAlertModal from "@/components/GlobalAlertModal";
 import { setupGlobalAlertInterceptor } from "@/utils/alertManager";
 
 // Ativa a interceptação de alertas nativos globalmente para o padrão OnePilates (branco e laranja)
 setupGlobalAlertInterceptor();
 
-export default function RootLayout() {
-  useEffect(() => {
-    setupGlobalAlertInterceptor();
-  }, []);
+function ThemedRootApp() {
+  const { isDark } = useTheme();
 
   return (
-    <AuthProvider>
-      <StatusBar style="dark" />
+    <>
+      <StatusBar style={isDark ? "light" : "dark"} />
       <Stack
         screenOptions={{
           headerShown: false,
@@ -29,6 +28,20 @@ export default function RootLayout() {
         <Stack.Screen name="(teacher)" />
       </Stack>
       <GlobalAlertModal />
-    </AuthProvider>
+    </>
+  );
+}
+
+export default function RootLayout() {
+  useEffect(() => {
+    setupGlobalAlertInterceptor();
+  }, []);
+
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <ThemedRootApp />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
