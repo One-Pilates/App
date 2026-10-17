@@ -46,7 +46,7 @@ Legenda:
 
 |---|:---:|---|
 
-| Dashboard (Início) | 🟡 | KPIs e gráfico com **dados mockados** — falta integrar endpoints reais |
+| Dashboard (Início) | ✅ | KPIs e gráficos integrados aos endpoints reais; atualização ao retornar para a aba e ao puxar para atualizar |
 
 | Agenda | 🟡 | Calendário + lista de aulas **mockados** — falta integrar |
 
@@ -84,7 +84,7 @@ Legenda:
 
 |---|:---:|---|
 
-| Dashboard | 🟡 | Mockado (idêntico ao da secretaria) |
+| Dashboard | ✅ | KPIs e gráfico integrados ao endpoint real; atualização ao retornar para a aba e ao puxar para atualizar |
 
 | Agenda | 🟡 | Mockado |
 
@@ -122,7 +122,7 @@ Legenda:
 
 2. **Criar aula** (`agendamento/criar`) — migrar de `RegisterAula`; depende da agenda integrada.
 
-3. **Integrar Dashboard** com KPIs reais (secretaria e professor).
+3. ~~**Integrar Dashboard** com KPIs reais (secretaria e professor).~~ ✅ Concluído.
 
 4. Recursos transversais opcionais: modo privacidade, logout por inatividade, exportação (PDF/Excel), páginas estáticas (termos/política).
 
@@ -134,7 +134,7 @@ Legenda:
 
 - **Migrado e funcional:** todo o fluxo de autenticação (incluindo redefinir senha e primeiro acesso), Perfil, Alunos (lista + visualização + **cadastro/edição**), Colaboradores (hub, professores, secretárias + **cadastro**), Studio, navegação por tabs + hub "Mais".
 
-- **Falta integrar (mock):** Dashboard e Agenda (secretaria e professor).
+- **Falta integrar (mock):** Agenda (secretaria e professor).
 
 - **Falta migrar (stub):** criar aula (`agendamento/criar`).
 
