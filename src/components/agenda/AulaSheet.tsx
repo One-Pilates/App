@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-
+import { useEffect, useState, useMemo } from "react";
 import {
   Modal,
   View,
@@ -11,15 +10,11 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-
 import { Feather } from "@expo/vector-icons";
-
 import api from "@/services/api";
-
 import { notify } from "@/utils/notify";
-
 import { Agendamento, AlunoAgendamento } from "@/types/agenda";
-
+import { useTheme, ThemeColors } from "@/contexts/ThemeContext";
 import {
   getColorForEspecialidade,
   horaDeDataHora,
@@ -30,15 +25,10 @@ import {
 
 interface Props {
   visible: boolean;
-
   agendamento: Agendamento | null;
-
   podeEditar: boolean;
-
   onFechar: () => void;
-
   onEditar: () => void;
-
   onAlterado: () => void;
 }
 
@@ -53,11 +43,8 @@ const CORES_AVATAR = [
 
 function iniciais(nome?: string): string {
   if (!nome) return "UA";
-
   const partes = nome.trim().split(" ");
-
   if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
-
   return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
 }
 
@@ -67,40 +54,29 @@ function corAvatar(nome?: string): string {
 
 export default function AulaSheet({
   visible,
-
   agendamento,
-
   podeEditar,
-
   onFechar,
-
   onEditar,
-
   onAlterado,
 }: Props) {
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+
   const [aba, setAba] = useState<"informacoes" | "alunos">("informacoes");
-
   const [observacoes, setObservacoes] = useState<Record<number, string>>({});
-
   const [expandido, setExpandido] = useState<Record<number, boolean>>({});
-
   const [editandoObs, setEditandoObs] = useState<Record<number, string>>({});
-
   const [salvandoObs, setSalvandoObs] = useState<number | null>(null);
 
   useEffect(() => {
     if (!agendamento?.alunos) return;
-
     const mapa: Record<number, string> = {};
-
     agendamento.alunos.forEach((a) => {
       mapa[a.id] = a.observacao || "";
     });
-
     setObservacoes(mapa);
-
     setExpandido({});
-
     setEditandoObs({});
   }, [agendamento]);
 
@@ -113,14 +89,11 @@ export default function AulaSheet({
   const { backgroundColor } = getColorForEspecialidade(
     agendamento.especialidade,
   );
-
   const inicio = horaDeDataHora(agendamento.dataHora);
-
   const alunos: AlunoAgendamento[] = agendamento.alunos || [];
 
   async function salvarObservacao(alunoId: number) {
     const texto = editandoObs[alunoId] ?? "";
-
     setSalvandoObs(alunoId);
 
     try {
@@ -132,19 +105,14 @@ export default function AulaSheet({
       );
 
       setObservacoes((prev) => ({ ...prev, [alunoId]: texto }));
-
       setEditandoObs((prev) => {
         const next = { ...prev };
-
         delete next[alunoId];
-
         return next;
       });
-
       notify.success("Observação salva!");
     } catch (error) {
       console.error("Erro ao salvar observação:", error);
-
       notify.error("Erro ao salvar observação.");
     } finally {
       setSalvandoObs(null);
@@ -154,29 +122,20 @@ export default function AulaSheet({
   function excluirAula() {
     Alert.alert(
       "Deletar aula?",
-
       "Tem certeza que deseja deletar esta aula? Esta ação não pode ser desfeita.",
-
       [
         { text: "Cancelar", style: "cancel" },
-
         {
           text: "Sim, deletar",
-
           style: "destructive",
-
           onPress: async () => {
             try {
               await api.delete(`api/agendamentos/${agendamento!.id}`);
-
               notify.success("Aula deletada com sucesso.");
-
               onFechar();
-
               onAlterado();
             } catch (error) {
               console.error("Erro ao deletar aula:", error);
-
               notify.error("Não foi possível deletar a aula. Tente novamente.");
             }
           },
@@ -228,25 +187,33 @@ export default function AulaSheet({
                   style={styles.iconBtnPerigo}
                   onPress={excluirAula}
                 >
-                  <Feather name="trash-2" size={18} color="#e11d48" />
+                  <Feather name="trash-2" size={18} color={colors.danger} />
                 </TouchableOpacity>
               )}
 
               <TouchableOpacity style={styles.iconBtn} onPress={onFechar}>
-                <Feather name="x" size={20} color="#64748b" />
+                <Feather name="x" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
           </View>
 
           <View style={styles.abas}>
             <TouchableOpacity
-              style={[styles.aba, aba === "informacoes" && styles.abaAtiva]}
+              style={[
+                styles.aba,
+                aba === "informacoes" && {
+                  borderBottomColor: backgroundColor || colors.primary,
+                },
+              ]}
               onPress={() => setAba("informacoes")}
             >
               <Text
                 style={[
                   styles.abaTexto,
-                  aba === "informacoes" && styles.abaTextoAtivo,
+                  aba === "informacoes" && {
+                    color: backgroundColor || colors.primary,
+                    fontWeight: "bold",
+                  },
                 ]}
               >
                 Informações
@@ -254,13 +221,21 @@ export default function AulaSheet({
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.aba, aba === "alunos" && styles.abaAtiva]}
+              style={[
+                styles.aba,
+                aba === "alunos" && {
+                  borderBottomColor: backgroundColor || colors.primary,
+                },
+              ]}
               onPress={() => setAba("alunos")}
             >
               <Text
                 style={[
                   styles.abaTexto,
-                  aba === "alunos" && styles.abaTextoAtivo,
+                  aba === "alunos" && {
+                    color: backgroundColor || colors.primary,
+                    fontWeight: "bold",
+                  },
                 ]}
               >
                 Alunos ({alunos.length})
@@ -272,6 +247,8 @@ export default function AulaSheet({
             {aba === "informacoes" ? (
               <>
                 <Linha
+                  styles={styles}
+                  colors={colors}
                   icone="user"
                   rotulo="Professor"
                   valor={
@@ -282,12 +259,16 @@ export default function AulaSheet({
                 />
 
                 <Linha
+                  styles={styles}
+                  colors={colors}
                   icone="clock"
                   rotulo="Horário"
                   valor={`${inicio}h às ${somarHoras(inicio, 1)}h`}
                 />
 
                 <Linha
+                  styles={styles}
+                  colors={colors}
                   icone="map-pin"
                   rotulo="Sala"
                   valor={
@@ -296,6 +277,8 @@ export default function AulaSheet({
                 />
 
                 <Linha
+                  styles={styles}
+                  colors={colors}
                   icone="hash"
                   rotulo="Especialidade"
                   valor={agendamento.especialidade}
@@ -307,23 +290,19 @@ export default function AulaSheet({
                     onPress={onEditar}
                   >
                     <Feather name="edit-2" size={16} color="#fff" />
-
                     <Text style={styles.btnEditarTexto}>Editar aula</Text>
                   </TouchableOpacity>
                 )}
               </>
             ) : alunos.length === 0 ? (
               <View style={styles.vazio}>
-                <Feather name="users" size={28} color="#cbd5e1" />
-
+                <Feather name="users" size={28} color={colors.textMuted} />
                 <Text style={styles.vazioTexto}>Nenhum aluno nesta aula.</Text>
               </View>
             ) : (
               alunos.map((aluno) => {
                 const aberto = expandido[aluno.id];
-
                 const editando = editandoObs[aluno.id] !== undefined;
-
                 const obs = observacoes[aluno.id] || "";
 
                 return (
@@ -350,9 +329,8 @@ export default function AulaSheet({
                             <Feather
                               name="alert-triangle"
                               size={10}
-                              color="#b45309"
+                              color={isDark ? "#fbbf24" : "#b45309"}
                             />
-
                             <Text style={styles.tagPcdTexto}>PCD</Text>
                           </View>
                         )}
@@ -370,7 +348,7 @@ export default function AulaSheet({
                         <Feather
                           name={aberto ? "eye-off" : "eye"}
                           size={17}
-                          color="#64748b"
+                          color={colors.textSecondary}
                         />
                       </TouchableOpacity>
                     </View>
@@ -389,7 +367,7 @@ export default function AulaSheet({
                                 }))
                               }
                               placeholder="Observação sobre o aluno..."
-                              placeholderTextColor="#94a3b8"
+                              placeholderTextColor={colors.inputPlaceholder}
                               multiline
                               textAlignVertical="top"
                             />
@@ -400,9 +378,7 @@ export default function AulaSheet({
                                 onPress={() =>
                                   setEditandoObs((prev) => {
                                     const next = { ...prev };
-
                                     delete next[aluno.id];
-
                                     return next;
                                   })
                                 }
@@ -470,23 +446,22 @@ export default function AulaSheet({
 }
 
 function Linha({
+  styles,
+  colors,
   icone,
-
   rotulo,
-
   valor,
 }: {
+  styles: any;
+  colors: ThemeColors;
   icone: keyof typeof Feather.glyphMap;
-
   rotulo: string;
-
   valor: string;
 }) {
   return (
     <View style={styles.linha}>
       <View style={styles.linhaRotulo}>
-        <Feather name={icone} size={14} color="#94a3b8" />
-
+        <Feather name={icone} size={14} color={colors.textSecondary} />
         <Text style={styles.linhaRotuloTexto}>{rotulo}</Text>
       </View>
 
@@ -497,257 +472,215 @@ function Linha({
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)" },
-
-  overlayTop: { flex: 1 },
-
-  sheet: {
-    backgroundColor: "#fff",
-
-    borderTopLeftRadius: 24,
-
-    borderTopRightRadius: 24,
-
-    maxHeight: "85%",
-
-    paddingBottom: 24,
-  },
-
-  handle: {
-    width: 40,
-
-    height: 4,
-
-    borderRadius: 2,
-
-    backgroundColor: "#e2e8f0",
-
-    alignSelf: "center",
-
-    marginTop: 10,
-  },
-
-  header: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    paddingHorizontal: 20,
-
-    paddingTop: 14,
-
-    paddingBottom: 12,
-  },
-
-  headerTitulo: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-
-  especialidadeDot: { width: 10, height: 36, borderRadius: 5 },
-
-  flex1: { flex: 1 },
-
-  titulo: { fontSize: 18, fontWeight: "bold" },
-
-  subtitulo: { fontSize: 12.5, color: "#94a3b8", marginTop: 2 },
-
-  headerAcoes: { flexDirection: "row", alignItems: "center", gap: 6 },
-
-  iconBtn: { padding: 7 },
-
-  iconBtnPerigo: { padding: 7, borderRadius: 10, backgroundColor: "#fef2f2" },
-
-  abas: {
-    flexDirection: "row",
-
-    paddingHorizontal: 20,
-
-    borderBottomWidth: 1,
-
-    borderBottomColor: "#f1f5f9",
-  },
-
-  aba: {
-    paddingVertical: 11,
-    paddingHorizontal: 4,
-    marginRight: 22,
-    borderBottomWidth: 2,
-    borderBottomColor: "transparent",
-  },
-
-  abaAtiva: { borderBottomColor: "#f77433" },
-
-  abaTexto: { fontSize: 14, color: "#94a3b8", fontWeight: "600" },
-
-  abaTextoAtivo: { color: "#f77433" },
-
-  body: { paddingHorizontal: 20, paddingTop: 16 },
-
-  linha: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    justifyContent: "space-between",
-
-    paddingVertical: 12,
-
-    borderBottomWidth: 1,
-
-    borderBottomColor: "#f8fafc",
-
-    gap: 12,
-  },
-
-  linhaRotulo: { flexDirection: "row", alignItems: "center", gap: 6 },
-
-  linhaRotuloTexto: { fontSize: 13, color: "#94a3b8", fontWeight: "600" },
-
-  linhaValor: {
-    flex: 1,
-    fontSize: 14,
-    color: "#0f172a",
-    fontWeight: "600",
-    textAlign: "right",
-  },
-
-  btnEditar: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    justifyContent: "center",
-
-    gap: 8,
-
-    borderRadius: 12,
-
-    paddingVertical: 14,
-
-    marginTop: 20,
-  },
-
-  btnEditarTexto: { color: "#fff", fontSize: 15, fontWeight: "bold" },
-
-  vazio: { alignItems: "center", paddingVertical: 40, gap: 10 },
-
-  vazioTexto: { color: "#94a3b8", fontSize: 14 },
-
-  alunoWrapper: { marginBottom: 10 },
-
-  alunoCard: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    gap: 12,
-
-    backgroundColor: "#f8fafc",
-
-    borderRadius: 14,
-
-    padding: 12,
-  },
-
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  avatarTexto: { color: "#fff", fontWeight: "bold", fontSize: 14 },
-
-  alunoNome: { fontSize: 14.5, fontWeight: "600", color: "#0f172a" },
-
-  tagPcd: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    alignSelf: "flex-start",
-
-    gap: 3,
-
-    backgroundColor: "#fef3c7",
-
-    paddingHorizontal: 7,
-
-    paddingVertical: 2,
-
-    borderRadius: 7,
-
-    marginTop: 4,
-  },
-
-  tagPcdTexto: { fontSize: 10, color: "#b45309", fontWeight: "bold" },
-
-  obsBox: {
-    backgroundColor: "#fff",
-
-    borderWidth: 1,
-
-    borderColor: "#f1f5f9",
-
-    borderRadius: 12,
-
-    padding: 12,
-
-    marginTop: 6,
-
-    marginHorizontal: 6,
-  },
-
-  obsLeitura: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
-
-  obsTexto: { flex: 1, fontSize: 13.5, color: "#64748b", lineHeight: 19 },
-
-  obsInput: {
-    borderWidth: 1.5,
-
-    borderColor: "#f1f5f9",
-
-    borderRadius: 10,
-
-    padding: 10,
-
-    fontSize: 14,
-
-    color: "#0f172a",
-
-    minHeight: 70,
-
-    backgroundColor: "#f8fafc",
-  },
-
-  obsAcoes: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 8,
-    marginTop: 8,
-  },
-
-  obsBtnCancelar: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 9,
-    backgroundColor: "#f1f5f9",
-  },
-
-  obsBtnCancelarTexto: { color: "#475569", fontWeight: "600", fontSize: 13 },
-
-  obsBtnSalvar: {
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-    borderRadius: 9,
-    minWidth: 74,
-    alignItems: "center",
-  },
-
-  obsBtnSalvarTexto: { color: "#fff", fontWeight: "bold", fontSize: 13 },
-});
+const getStyles = (colors: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: isDark ? "rgba(0,0,0,0.68)" : "rgba(0,0,0,0.4)",
+    },
+
+    overlayTop: { flex: 1 },
+
+    sheet: {
+      backgroundColor: colors.surfaceCard,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      borderTopWidth: isDark ? 1 : 0,
+      borderTopColor: colors.border,
+      maxHeight: "85%",
+      paddingBottom: 24,
+    },
+
+    handle: {
+      width: 40,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.borderSubtle,
+      alignSelf: "center",
+      marginTop: 10,
+    },
+
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 20,
+      paddingTop: 14,
+      paddingBottom: 12,
+    },
+
+    headerTitulo: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+
+    especialidadeDot: { width: 10, height: 36, borderRadius: 5 },
+
+    flex1: { flex: 1 },
+
+    titulo: { fontSize: 18, fontWeight: "bold" },
+
+    subtitulo: { fontSize: 12.5, color: colors.textSecondary, marginTop: 2 },
+
+    headerAcoes: { flexDirection: "row", alignItems: "center", gap: 6 },
+
+    iconBtn: { padding: 7 },
+
+    iconBtnPerigo: {
+      padding: 7,
+      borderRadius: 10,
+      backgroundColor: colors.dangerBg,
+    },
+
+    abas: {
+      flexDirection: "row",
+      paddingHorizontal: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+
+    aba: {
+      paddingVertical: 11,
+      paddingHorizontal: 4,
+      marginRight: 22,
+      borderBottomWidth: 2,
+      borderBottomColor: "transparent",
+    },
+
+    abaTexto: { fontSize: 14, color: colors.textSecondary, fontWeight: "600" },
+
+    body: { paddingHorizontal: 20, paddingTop: 16 },
+
+    linha: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      gap: 12,
+    },
+
+    linhaRotulo: { flexDirection: "row", alignItems: "center", gap: 6 },
+
+    linhaRotuloTexto: { fontSize: 13, color: colors.textSecondary, fontWeight: "600" },
+
+    linhaValor: {
+      flex: 1,
+      fontSize: 14,
+      color: colors.text,
+      fontWeight: "600",
+      textAlign: "right",
+    },
+
+    btnEditar: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      borderRadius: 12,
+      paddingVertical: 14,
+      marginTop: 20,
+    },
+
+    btnEditarTexto: { color: "#fff", fontSize: 15, fontWeight: "bold" },
+
+    vazio: { alignItems: "center", paddingVertical: 40, gap: 10 },
+
+    vazioTexto: { color: colors.textMuted, fontSize: 14 },
+
+    alunoWrapper: { marginBottom: 10 },
+
+    alunoCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      backgroundColor: colors.surfaceSubtle,
+      borderRadius: 14,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+
+    avatar: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+
+    avatarTexto: { color: "#fff", fontWeight: "bold", fontSize: 14 },
+
+    alunoNome: { fontSize: 14.5, fontWeight: "600", color: colors.text },
+
+    tagPcd: {
+      flexDirection: "row",
+      alignItems: "center",
+      alignSelf: "flex-start",
+      gap: 3,
+      backgroundColor: isDark ? "rgba(245, 158, 11, 0.2)" : "#fef3c7",
+      paddingHorizontal: 7,
+      paddingVertical: 2,
+      borderRadius: 7,
+      marginTop: 4,
+    },
+
+    tagPcdTexto: {
+      fontSize: 10,
+      color: isDark ? "#fbbf24" : "#b45309",
+      fontWeight: "bold",
+    },
+
+    obsBox: {
+      backgroundColor: colors.surfaceCard,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      padding: 12,
+      marginTop: 6,
+      marginHorizontal: 6,
+    },
+
+    obsLeitura: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
+
+    obsTexto: { flex: 1, fontSize: 13.5, color: colors.textSecondary, lineHeight: 19 },
+
+    obsInput: {
+      borderWidth: 1.5,
+      borderColor: colors.inputBorder,
+      borderRadius: 10,
+      padding: 10,
+      fontSize: 14,
+      color: colors.inputText,
+      minHeight: 70,
+      backgroundColor: colors.inputBg,
+    },
+
+    obsAcoes: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      gap: 8,
+      marginTop: 8,
+    },
+
+    obsBtnCancelar: {
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 9,
+      backgroundColor: colors.surfaceSubtle,
+    },
+
+    obsBtnCancelarTexto: { color: colors.textSecondary, fontWeight: "600", fontSize: 13 },
+
+    obsBtnSalvar: {
+      paddingHorizontal: 18,
+      paddingVertical: 8,
+      borderRadius: 9,
+      minWidth: 74,
+      alignItems: "center",
+    },
+
+    obsBtnSalvarTexto: { color: "#fff", fontWeight: "bold", fontSize: 13 },
+  });

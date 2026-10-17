@@ -162,9 +162,9 @@ export default function AgendaSecretariaScreen() {
       navigation.setOptions({ tabBarStyle: { display: "none" } });
     } else {
       const defaultStyle = {
-        backgroundColor: "#fff",
+        backgroundColor: colors.tabBg,
         borderTopWidth: 1,
-        borderTopColor: "#f1f5f9",
+        borderTopColor: colors.tabBorder,
         height: 60,
         paddingBottom: 8,
         paddingTop: 8,
@@ -175,9 +175,9 @@ export default function AgendaSecretariaScreen() {
 
     return () => {
       const defaultStyle = {
-        backgroundColor: "#fff",
+        backgroundColor: colors.tabBg,
         borderTopWidth: 1,
-        borderTopColor: "#f1f5f9",
+        borderTopColor: colors.tabBorder,
         height: 60,
         paddingBottom: 8,
         paddingTop: 8,
@@ -185,7 +185,7 @@ export default function AgendaSecretariaScreen() {
       parent?.setOptions({ tabBarStyle: defaultStyle });
       navigation.setOptions({ tabBarStyle: defaultStyle });
     };
-  }, [sheetAberto, navigation]);
+  }, [sheetAberto, navigation, colors.tabBg, colors.tabBorder]);
 
   const {
     diaSelecionado,
@@ -268,7 +268,7 @@ export default function AgendaSecretariaScreen() {
             <Feather
               name={mesAberto ? "chevron-up" : "chevron-down"}
               size={16}
-              color="#f77433"
+              color={colors.primary}
             />
           </TouchableOpacity>
         </View>
@@ -281,7 +281,7 @@ export default function AgendaSecretariaScreen() {
             <Feather
               name="map-pin"
               size={13}
-              color={idSala ? "#f77433" : "#64748b"}
+              color={idSala ? colors.primary : colors.textSecondary}
             />
 
             <Text
@@ -294,7 +294,7 @@ export default function AgendaSecretariaScreen() {
             <Feather
               name="chevron-down"
               size={14}
-              color={idSala ? "#f77433" : "#94a3b8"}
+              color={idSala ? colors.primary : colors.textMuted}
             />
           </TouchableOpacity>
 
@@ -305,7 +305,7 @@ export default function AgendaSecretariaScreen() {
             <Feather
               name="user"
               size={13}
-              color={idProfessor !== "0" ? "#f77433" : "#64748b"}
+              color={idProfessor !== "0" ? colors.primary : colors.textSecondary}
             />
 
             <Text
@@ -321,7 +321,7 @@ export default function AgendaSecretariaScreen() {
             <Feather
               name="chevron-down"
               size={14}
-              color={idProfessor !== "0" ? "#f77433" : "#94a3b8"}
+              color={idProfessor !== "0" ? colors.primary : colors.textMuted}
             />
           </TouchableOpacity>
         </View>
@@ -378,11 +378,11 @@ export default function AgendaSecretariaScreen() {
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#f77433" />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : erro ? (
         <View style={styles.center}>
-          <Feather name="wifi-off" size={32} color="#cbd5e1" />
+          <Feather name="wifi-off" size={32} color={colors.textMuted} />
 
           <Text style={styles.vazioTexto}>{erro}</Text>
 
@@ -411,7 +411,7 @@ export default function AgendaSecretariaScreen() {
           }
           ListEmptyComponent={
             <View style={styles.center}>
-              <Feather name="calendar" size={32} color="#cbd5e1" />
+              <Feather name="calendar" size={32} color={colors.textMuted} />
 
               <Text style={styles.vazioTexto}>Nenhuma aula neste dia.</Text>
             </View>

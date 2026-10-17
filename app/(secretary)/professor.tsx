@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 
 import {
   View,
@@ -21,6 +21,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "@/services/api";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme, ThemeColors } from "@/contexts/ThemeContext";
 
 import { notify } from "@/utils/notify";
 
@@ -28,19 +29,12 @@ import { formatarTelefone, getColorForEspecialidade } from "@/utils/utils";
 
 interface Professor {
   id: number;
-
   nome: string;
-
   email: string;
-
   cargo?: string;
-
   telefone?: string;
-
   status: boolean;
-
   foto?: string | null;
-
   especialidades?: { id: number; nome: string }[];
 }
 
@@ -50,6 +44,8 @@ export default function GerenciamentoProfessor() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   const isAdmin = (user?.role || "").toUpperCase() === "ADMINISTRADOR";
 
@@ -371,7 +367,7 @@ export default function GerenciamentoProfessor() {
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <Feather name="arrow-left" size={22} color="#0f172a" />
+            <Feather name="arrow-left" size={22} color={colors.text} />
           </TouchableOpacity>
 
           <Text style={styles.title}>Professores</Text>
@@ -382,7 +378,6 @@ export default function GerenciamentoProfessor() {
               onPress={() =>
                 router.push({
                   pathname: "/(secretary)/colaborador/cadastrar/[role]",
-
                   params: { role: "PROFESSOR" },
                 })
               }
@@ -393,12 +388,12 @@ export default function GerenciamentoProfessor() {
         </View>
 
         <View style={styles.searchContainer}>
-          <Feather name="search" size={20} color="#94a3b8" />
+          <Feather name="search" size={20} color={colors.textSecondary} />
 
           <TextInput
             style={styles.searchInput}
             placeholder="Buscar por nome..."
-            placeholderTextColor="#94a3b8"
+            placeholderTextColor={colors.inputPlaceholder}
             value={busca}
             onChangeText={setBusca}
           />
@@ -407,7 +402,7 @@ export default function GerenciamentoProfessor() {
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#f77433" />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
         <FlatList
@@ -424,7 +419,7 @@ export default function GerenciamentoProfessor() {
           ListFooterComponent={
             loadingMore ? (
               <ActivityIndicator
-                color="#f77433"
+                color={colors.primary}
                 style={{ marginVertical: 20 }}
               />
             ) : null
@@ -435,262 +430,216 @@ export default function GerenciamentoProfessor() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f8fafc" },
+const getStyles = (colors: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+
+    center: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.background },
+
+    header: {
+      paddingHorizontal: 16,
+      paddingBottom: 10,
+      backgroundColor: colors.surfaceCard,
+      borderBottomWidth: 1,
+      borderColor: colors.border,
+    },
+
+    headerTop: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
+
+    backButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: colors.surfaceSubtle,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 12,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+    },
+
+    title: { fontSize: 22, fontWeight: "800", color: colors.text, flex: 1 },
+
+    addButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: colors.primary,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+
+    searchContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.inputBg,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      height: 44,
+      borderWidth: 1,
+      borderColor: colors.inputBorder,
+    },
+
+    searchInput: { flex: 1, marginLeft: 10, fontSize: 15, color: colors.inputText },
+
+    listContent: { padding: 20 },
+
+    empty: {
+      textAlign: "center",
+      color: colors.textMuted,
+      fontWeight: "500",
+      marginTop: 40,
+    },
+
+    card: {
+      backgroundColor: colors.surfaceCard,
+      borderRadius: 18,
+      padding: 18,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.2 : 0.04,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+
+    cardTop: { flexDirection: "row", alignItems: "center", marginBottom: 14 },
+
+    avatar: {
+      width: 64,
+      height: 64,
+      borderRadius: 16,
+      backgroundColor: colors.primaryLight,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 16,
+    },
+
+    avatarImg: {
+      width: 64,
+      height: 64,
+      borderRadius: 16,
+      marginRight: 16,
+      backgroundColor: colors.primaryLight,
+    },
+
+    avatarText: { fontSize: 26, fontWeight: "bold", color: colors.primary },
+
+    headInfo: { flex: 1, gap: 3 },
+
+    name: { fontSize: 18, fontWeight: "bold", color: colors.text },
+
+    cargo: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+
+    statusBadge: {
+      alignSelf: "flex-start",
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+      borderRadius: 12,
+      borderWidth: 1,
+      marginTop: 4,
+    },
+
+    statusActive: {
+      backgroundColor: isDark ? "rgba(34, 197, 94, 0.15)" : "#ecfdf5",
+      borderColor: isDark ? "rgba(34, 197, 94, 0.3)" : "#d1fae5",
+    },
+
+    statusInactive: {
+      backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#fff1f2",
+      borderColor: isDark ? "rgba(239, 68, 68, 0.3)" : "#ffe4e6",
+    },
+
+    statusText: {
+      fontSize: 10,
+      fontWeight: "bold",
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+
+    statusTextActive: { color: isDark ? "#4ade80" : "#047857" },
+
+    statusTextInactive: { color: isDark ? "#f87171" : "#be123c" },
+
+    contactRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 6,
+    },
+
+    contactText: { fontSize: 14, color: colors.textSecondary, fontWeight: "500", flex: 1 },
+
+    chipsWrap: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+      marginTop: 8,
+      marginBottom: 4,
+    },
+
+    espChip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 10 },
+
+    espChipText: {
+      color: "#fff",
+      fontSize: 10,
+      fontWeight: "bold",
+      textTransform: "uppercase",
+    },
+
+    noEsp: { color: colors.textMuted, fontStyle: "italic", fontSize: 13 },
+
+    footerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginTop: 14,
+      paddingTop: 14,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+
+    agendaBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      backgroundColor: colors.primary,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 12,
+    },
+
+    agendaBtnText: { color: "#fff", fontWeight: "bold", fontSize: 14 },
+
+    adminActions: { flexDirection: "row", gap: 10 },
+
+    actionBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 10,
+      backgroundColor: colors.surfaceSubtle,
+      justifyContent: "center",
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+    },
+
+    actionActive: {
+      backgroundColor: isDark ? "rgba(34, 197, 94, 0.15)" : "#ecfdf5",
+      borderColor: isDark ? "rgba(34, 197, 94, 0.3)" : "#d1fae5",
+    },
+
+    actionInactive: {
+      backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#fff1f2",
+      borderColor: isDark ? "rgba(239, 68, 68, 0.3)" : "#ffe4e6",
+    },
+  });
 
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
-
-  header: {
-    paddingHorizontal: 16,
-    paddingBottom: 10,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderColor: "#e5e7eb",
-  },
-
-  headerTop: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
-
-  backButton: {
-    width: 40,
-
-    height: 40,
-
-    borderRadius: 12,
-
-    backgroundColor: "#f8fafc",
-
-    justifyContent: "center",
-
-    alignItems: "center",
-
-    marginRight: 12,
-
-    borderWidth: 1,
-
-    borderColor: "#f1f5f9",
-  },
-
-  title: { fontSize: 22, fontWeight: "800", color: "#0f172a", flex: 1 },
-
-  addButton: {
-    width: 40,
-
-    height: 40,
-
-    borderRadius: 12,
-
-    backgroundColor: "#f77433",
-
-    justifyContent: "center",
-
-    alignItems: "center",
-  },
-
-  searchContainer: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    backgroundColor: "#fff",
-
-    borderRadius: 10,
-
-    paddingHorizontal: 14,
-
-    height: 44,
-
-    borderWidth: 1,
-
-    borderColor: "#e2e8f0",
-  },
-
-  searchInput: { flex: 1, marginLeft: 10, fontSize: 15, color: "#0f172a" },
-
-  listContent: { padding: 20 },
-
-  empty: {
-    textAlign: "center",
-    color: "#94a3b8",
-    fontWeight: "500",
-    marginTop: 40,
-  },
-
-  card: {
-    backgroundColor: "#fff",
-
-    borderRadius: 18,
-
-    padding: 18,
-
-    marginBottom: 16,
-
-    borderWidth: 1,
-
-    borderColor: "#f1f5f9",
-
-    shadowColor: "#000",
-
-    shadowOffset: { width: 0, height: 2 },
-
-    shadowOpacity: 0.04,
-
-    shadowRadius: 8,
-
-    elevation: 2,
-  },
-
-  cardTop: { flexDirection: "row", alignItems: "center", marginBottom: 14 },
-
-  avatar: {
-    width: 64,
-
-    height: 64,
-
-    borderRadius: 16,
-
-    backgroundColor: "#fff3eb",
-
-    justifyContent: "center",
-
-    alignItems: "center",
-
-    marginRight: 16,
-  },
-
-  avatarImg: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
-    marginRight: 16,
-    backgroundColor: "#fff3eb",
-  },
-
-  avatarText: { fontSize: 26, fontWeight: "bold", color: "#f77433" },
-
-  headInfo: { flex: 1, gap: 3 },
-
-  name: { fontSize: 18, fontWeight: "bold", color: "#0f172a" },
-
-  cargo: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#94a3b8",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-
-  statusBadge: {
-    alignSelf: "flex-start",
-
-    paddingHorizontal: 10,
-
-    paddingVertical: 3,
-
-    borderRadius: 12,
-
-    borderWidth: 1,
-
-    marginTop: 4,
-  },
-
-  statusActive: { backgroundColor: "#ecfdf5", borderColor: "#d1fae5" },
-
-  statusInactive: { backgroundColor: "#fff1f2", borderColor: "#ffe4e6" },
-
-  statusText: {
-    fontSize: 10,
-    fontWeight: "bold",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-
-  statusTextActive: { color: "#047857" },
-
-  statusTextInactive: { color: "#be123c" },
-
-  contactRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 6,
-  },
-
-  contactText: { fontSize: 14, color: "#475569", fontWeight: "500", flex: 1 },
-
-  chipsWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 8,
-    marginBottom: 4,
-  },
-
-  espChip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 10 },
-
-  espChipText: {
-    color: "#fff",
-    fontSize: 10,
-    fontWeight: "bold",
-    textTransform: "uppercase",
-  },
-
-  noEsp: { color: "#94a3b8", fontStyle: "italic", fontSize: 13 },
-
-  footerRow: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    justifyContent: "space-between",
-
-    marginTop: 14,
-
-    paddingTop: 14,
-
-    borderTopWidth: 1,
-
-    borderTopColor: "#f1f5f9",
-  },
-
-  agendaBtn: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    gap: 8,
-
-    backgroundColor: "#f77433",
-
-    paddingHorizontal: 16,
-
-    paddingVertical: 10,
-
-    borderRadius: 12,
-  },
-
-  agendaBtnText: { color: "#fff", fontWeight: "bold", fontSize: 14 },
-
-  adminActions: { flexDirection: "row", gap: 10 },
-
-  actionBtn: {
-    width: 40,
-
-    height: 40,
-
-    borderRadius: 10,
-
-    backgroundColor: "#f8fafc",
-
-    justifyContent: "center",
-
-    alignItems: "center",
-
-    borderWidth: 1,
-
-    borderColor: "#f1f5f9",
-  },
-
-  actionActive: { backgroundColor: "#ecfdf5", borderColor: "#d1fae5" },
-
-  actionInactive: { backgroundColor: "#fff1f2", borderColor: "#ffe4e6" },
-});

@@ -141,9 +141,9 @@ export default function AgendaProfessorScreen() {
       navigation.setOptions({ tabBarStyle: { display: "none" } });
     } else {
       const defaultStyle = {
-        backgroundColor: "#fff",
+        backgroundColor: colors.tabBg,
         borderTopWidth: 1,
-        borderTopColor: "#f1f5f9",
+        borderTopColor: colors.tabBorder,
         height: 60,
         paddingBottom: 8,
         paddingTop: 8,
@@ -154,9 +154,9 @@ export default function AgendaProfessorScreen() {
 
     return () => {
       const defaultStyle = {
-        backgroundColor: "#fff",
+        backgroundColor: colors.tabBg,
         borderTopWidth: 1,
-        borderTopColor: "#f1f5f9",
+        borderTopColor: colors.tabBorder,
         height: 60,
         paddingBottom: 8,
         paddingTop: 8,
@@ -164,7 +164,7 @@ export default function AgendaProfessorScreen() {
       parent?.setOptions({ tabBarStyle: defaultStyle });
       navigation.setOptions({ tabBarStyle: defaultStyle });
     };
-  }, [sheetAberto, navigation]);
+  }, [sheetAberto, navigation, colors.tabBg, colors.tabBorder]);
 
   const primeiroFoco = useRef(true);
 
@@ -195,7 +195,7 @@ export default function AgendaProfessorScreen() {
             <Feather
               name={mesAberto ? "chevron-up" : "chevron-down"}
               size={16}
-              color="#f77433"
+              color={colors.primary}
             />
           </TouchableOpacity>
         </View>
@@ -252,11 +252,11 @@ export default function AgendaProfessorScreen() {
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#f77433" />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : erro ? (
         <View style={styles.center}>
-          <Feather name="wifi-off" size={32} color="#cbd5e1" />
+          <Feather name="wifi-off" size={32} color={colors.textMuted} />
 
           <Text style={styles.vazioTexto}>{erro}</Text>
 
@@ -285,7 +285,7 @@ export default function AgendaProfessorScreen() {
           }
           ListEmptyComponent={
             <View style={styles.center}>
-              <Feather name="calendar" size={32} color="#cbd5e1" />
+              <Feather name="calendar" size={32} color={colors.textMuted} />
 
               <Text style={styles.vazioTexto}>Nenhuma aula neste dia.</Text>
             </View>
