@@ -14,7 +14,7 @@ import {
 } from "react-native";
 
 import { Feather } from "@expo/vector-icons";
-
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -81,14 +81,13 @@ function extrairLista<T>(payload: any, chave?: string): T[] {
 
 export default function AulaForm({
   dataInicial,
-
   horarioInicial,
 }: {
   dataInicial?: string;
-
   horarioInicial?: string;
 }) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const [etapaAtual, setEtapaAtual] = useState(1);
 
@@ -406,7 +405,7 @@ export default function AulaForm({
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top > 0 ? insets.top + 6 : 14 }]}>
         <View style={styles.headerTop}>
           <TouchableOpacity style={styles.backButton} onPress={cancelar}>
             <Feather name="arrow-left" size={22} color="#0f172a" />

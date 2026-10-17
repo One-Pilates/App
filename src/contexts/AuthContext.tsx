@@ -52,11 +52,13 @@ interface AuthContextData {
   loading: boolean;
   setUser: (user: User | null) => void;
   updateUser: (user: User) => Promise<void>;
-  login: (email: string, senha: string) => Promise<LoginResult>;
+  login: (email: string, senha: string, remember?: boolean) => Promise<LoginResult>;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
+
+export const STORAGE_KEY_REMEMBER_SESSION = "@onepilates_remember_session";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -65,11 +67,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     async function loadStorageData() {
       try {
+        const remember = await AsyncStorage.getItem(STORAGE_KEY_REMEMBER_SESSION);
         const storedToken = await AsyncStorage.getItem("token");
         const storedUser = await AsyncStorage.getItem("user");
 
-        if (storedToken && storedUser) {
+        // Se o usuário marcou para lembrar e possui credenciais válidas salvas, restaura a sessão
+        if (remember === "true" && storedToken && storedUser) {
           setUser(JSON.parse(storedUser) as User);
+        } else if (remember !== "true") {
+          // Se não optou por manter conectado, limpa a sessão ao reabrir o app
+          await AsyncStorage.removeItem("token");
+          await AsyncStorage.removeItem("user");
+          setUser(null);
         }
       } catch (error) {
         console.error("Falha ao carregar dados do armazenamento", error);
@@ -81,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loadStorageData();
   }, []);
 
-  async function login(email: string, senha: string): Promise<LoginResult> {
+  async function login(email: string, senha: string, remember: boolean = false): Promise<LoginResult> {
     setLoading(true);
 
     try {
@@ -112,6 +121,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
       }
       const userData: User = data?.funcionario;
+      
+      // Salva ou atualiza a preferência de manter a sessão conectada
+      await AsyncStorage.setItem(STORAGE_KEY_REMEMBER_SESSION, remember ? "true" : "false");
       await AsyncStorage.setItem("token", JSON.stringify(token));
       await AsyncStorage.setItem("user", JSON.stringify(userData));
 
@@ -141,6 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function logout() {
     try {
+      await AsyncStorage.removeItem(STORAGE_KEY_REMEMBER_SESSION);
       await AsyncStorage.removeItem("token");
       await AsyncStorage.removeItem("user");
 

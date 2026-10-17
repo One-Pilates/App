@@ -7,7 +7,7 @@ import {
 } from "react-native";
 
 import { Feather } from "@expo/vector-icons";
-
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 
 interface CardItem {
@@ -56,15 +56,24 @@ const cards: CardItem[] = [
 
 export default function Colaboradores() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top > 0 ? insets.top + 10 : 20 }]}
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.header}>
-        <Text style={styles.pageTitle}>Colaboradores</Text>
+        <View style={styles.titleRow}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Feather name="arrow-left" size={22} color="#0f172a" />
+          </TouchableOpacity>
+          <Text style={styles.pageTitle}>Colaboradores</Text>
+        </View>
 
         <Text style={styles.pageSubtitle}>
           Selecione qual lista deseja visualizar
@@ -97,14 +106,21 @@ export default function Colaboradores() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f8fafc" },
-
-  content: { padding: 20, paddingTop: 24, paddingBottom: 60 },
-
+  content: { paddingHorizontal: 16, paddingBottom: 40 },
   header: { marginBottom: 16 },
-
-  pageTitle: { fontSize: 24, fontWeight: "bold", color: "#0f172a" },
-
-  pageSubtitle: { fontSize: 14, color: "#64748b", marginTop: 4 },
+  titleRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 4 },
+  backButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  pageTitle: { fontSize: 20, fontWeight: "800", color: "#0f172a" },
+  pageSubtitle: { fontSize: 13, color: "#64748b" },
 
   card: {
     backgroundColor: "#fff",

@@ -1,5 +1,4 @@
-import { useCallback, useRef, useState } from "react";
-
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -8,14 +7,15 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
-
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 
 import { Calendar, LocaleConfig } from "react-native-calendars";
 
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useNavigation } from "expo-router";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme, ThemeColors } from "@/contexts/ThemeContext";
 
 import { useAgenda } from "@/hooks/useAgenda";
 
@@ -43,7 +43,6 @@ LocaleConfig.locales["pt-br"] = {
     "Abril",
     "Maio",
     "Junho",
-
     "Julho",
     "Agosto",
     "Setembro",
@@ -86,6 +85,9 @@ LocaleConfig.defaultLocale = "pt-br";
 
 export default function AgendaProfessorScreen() {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const styles = useMemo(() => getStyles(colors), [colors]);
 
   const { agendamentos, ausencias, loading, erro, recarregar } = useAgenda({
     professorFixo: user?.id,
@@ -124,6 +126,46 @@ export default function AgendaProfessorScreen() {
 
   const [definindoAusencia, setDefinindoAusencia] = useState(false);
 
+  const navigation = useNavigation();
+
+  const sheetAberto = Boolean(
+    aulaSelecionada ||
+    ausenciaSelecionada ||
+    definindoAusencia
+  );
+
+  useEffect(() => {
+    const parent = navigation.getParent();
+    if (sheetAberto) {
+      parent?.setOptions({ tabBarStyle: { display: "none" } });
+      navigation.setOptions({ tabBarStyle: { display: "none" } });
+    } else {
+      const defaultStyle = {
+        backgroundColor: "#fff",
+        borderTopWidth: 1,
+        borderTopColor: "#f1f5f9",
+        height: 60,
+        paddingBottom: 8,
+        paddingTop: 8,
+      };
+      parent?.setOptions({ tabBarStyle: defaultStyle });
+      navigation.setOptions({ tabBarStyle: defaultStyle });
+    }
+
+    return () => {
+      const defaultStyle = {
+        backgroundColor: "#fff",
+        borderTopWidth: 1,
+        borderTopColor: "#f1f5f9",
+        height: 60,
+        paddingBottom: 8,
+        paddingTop: 8,
+      };
+      parent?.setOptions({ tabBarStyle: defaultStyle });
+      navigation.setOptions({ tabBarStyle: defaultStyle });
+    };
+  }, [sheetAberto, navigation]);
+
   const primeiroFoco = useRef(true);
 
   useFocusEffect(
@@ -140,7 +182,7 @@ export default function AgendaProfessorScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top > 0 ? insets.top + 6 : 14 }]}>
         <View style={styles.headerTop}>
           <Text style={styles.title}>Agenda</Text>
 
@@ -166,11 +208,19 @@ export default function AgendaProfessorScreen() {
             firstDay={1}
             hideExtraDays
             theme={{
-              todayTextColor: "#f77433",
-
-              arrowColor: "#f77433",
-
-              selectedDayBackgroundColor: "#f77433",
+              backgroundColor: colors.surfaceCard,
+              calendarBackground: colors.surfaceCard,
+              textSectionTitleColor: colors.textSecondary,
+              selectedDayBackgroundColor: colors.primary,
+              selectedDayTextColor: '#ffffff',
+              todayTextColor: colors.primary,
+              dayTextColor: colors.text,
+              textDisabledColor: colors.textMuted,
+              dotColor: colors.primary,
+              selectedDotColor: '#ffffff',
+              arrowColor: colors.primary,
+              monthTextColor: colors.text,
+              indicatorColor: colors.primary,
             }}
             onDayPress={(day: { dateString: string }) => {
               selecionarDia(day.dateString);
@@ -283,131 +333,93 @@ export default function AgendaProfessorScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f8fafc" },
+const getStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
 
-  header: {
-    paddingHorizontal: 20,
+    header: {
+      paddingHorizontal: 16,
+      paddingBottom: 10,
+      backgroundColor: colors.surfaceCard,
+      borderBottomWidth: 1,
+      borderColor: colors.border,
+    },
 
-    paddingTop: 18,
+    headerTop: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 10,
+    },
 
-    paddingBottom: 14,
+    title: { fontSize: 20, fontWeight: "800", color: colors.text },
 
-    backgroundColor: "#fff",
+    monthButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.primaryLight,
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      borderRadius: 10,
+      gap: 4,
+    },
 
-    borderBottomWidth: 1,
+    monthButtonText: { color: colors.primary, fontWeight: "bold", fontSize: 13.5 },
 
-    borderColor: "#f1f5f9",
-  },
+    fullCalendar: { borderRadius: 12 },
 
-  headerTop: {
-    flexDirection: "row",
+    listaHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 20,
+      paddingTop: 18,
+      paddingBottom: 10,
+    },
 
-    justifyContent: "space-between",
+    listaTitulo: { fontSize: 15, fontWeight: "700", color: colors.text },
 
-    alignItems: "center",
+    listaContagem: { fontSize: 12.5, color: colors.textMuted, fontWeight: "600" },
 
-    marginBottom: 14,
-  },
+    listContent: { paddingHorizontal: 20, paddingBottom: 100 },
 
-  title: { fontSize: 24, fontWeight: "800", color: "#0f172a" },
+    center: {
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 48,
+      gap: 10,
+    },
 
-  monthButton: {
-    flexDirection: "row",
+    vazioTexto: { fontSize: 14, color: colors.textMuted, textAlign: "center" },
 
-    alignItems: "center",
+    retryBtn: {
+      marginTop: 4,
+      paddingHorizontal: 16,
+      paddingVertical: 9,
+      borderRadius: 10,
+      backgroundColor: colors.primaryLight,
+    },
 
-    backgroundColor: "#fff3eb",
+    retryText: { color: colors.primary, fontWeight: "700", fontSize: 13 },
 
-    paddingHorizontal: 12,
+    fab: {
+      position: "absolute",
+      right: 20,
+      bottom: 24,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      paddingHorizontal: 18,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: colors.primary,
+      justifyContent: "center",
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.4,
+      shadowRadius: 10,
+      elevation: 6,
+    },
 
-    paddingVertical: 7,
-
-    borderRadius: 10,
-
-    gap: 4,
-  },
-
-  monthButtonText: { color: "#f77433", fontWeight: "bold", fontSize: 13.5 },
-
-  fullCalendar: { borderRadius: 12 },
-
-  listaHeader: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    justifyContent: "space-between",
-
-    paddingHorizontal: 20,
-
-    paddingTop: 18,
-
-    paddingBottom: 10,
-  },
-
-  listaTitulo: { fontSize: 15, fontWeight: "700", color: "#0f172a" },
-
-  listaContagem: { fontSize: 12.5, color: "#94a3b8", fontWeight: "600" },
-
-  listContent: { paddingHorizontal: 20, paddingBottom: 100 },
-
-  center: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 48,
-    gap: 10,
-  },
-
-  vazioTexto: { fontSize: 14, color: "#94a3b8", textAlign: "center" },
-
-  retryBtn: {
-    marginTop: 4,
-
-    paddingHorizontal: 16,
-
-    paddingVertical: 9,
-
-    borderRadius: 10,
-
-    backgroundColor: "#fff3eb",
-  },
-
-  retryText: { color: "#f77433", fontWeight: "700", fontSize: 13 },
-
-  fab: {
-    position: "absolute",
-
-    right: 20,
-
-    bottom: 24,
-
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    gap: 8,
-
-    paddingHorizontal: 18,
-
-    height: 52,
-
-    borderRadius: 26,
-
-    backgroundColor: "#f77433",
-
-    justifyContent: "center",
-
-    shadowColor: "#f77433",
-
-    shadowOffset: { width: 0, height: 4 },
-
-    shadowOpacity: 0.4,
-
-    shadowRadius: 10,
-
-    elevation: 6,
-  },
-
-  fabTexto: { color: "#fff", fontWeight: "bold", fontSize: 14.5 },
-});
+    fabTexto: { color: "#fff", fontWeight: "bold", fontSize: 14.5 },
+  });

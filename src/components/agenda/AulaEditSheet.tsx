@@ -226,6 +226,7 @@ export default function AulaEditSheet({
       visible={visible}
       transparent
       animationType="slide"
+      statusBarTranslucent={true}
       onRequestClose={onFechar}
     >
       <View style={styles.overlay}>

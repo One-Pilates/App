@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -8,12 +7,15 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
-
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 
 import { Calendar, LocaleConfig } from "react-native-calendars";
 
-import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter, useNavigation } from "expo-router";
+
+import { useAuth } from "@/contexts/AuthContext";
+import { useTheme, ThemeColors } from "@/contexts/ThemeContext";
 
 import { useAgenda } from "@/hooks/useAgenda";
 
@@ -45,7 +47,6 @@ LocaleConfig.locales["pt-br"] = {
     "Abril",
     "Maio",
     "Junho",
-
     "Julho",
     "Agosto",
     "Setembro",
@@ -88,6 +89,9 @@ LocaleConfig.defaultLocale = "pt-br";
 
 export default function AgendaSecretariaScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const styles = useMemo(() => getStyles(colors), [colors]);
 
   const params = useLocalSearchParams<{
     idProfessor?: string;
@@ -139,6 +143,49 @@ export default function AgendaSecretariaScreen() {
   const [filtroAberto, setFiltroAberto] = useState<"sala" | "professor" | null>(
     null,
   );
+
+  const navigation = useNavigation();
+
+  const sheetAberto = Boolean(
+    aulaSelecionada ||
+    editandoAula ||
+    ausenciaSelecionada ||
+    definindoAusencia ||
+    acoesAbertas ||
+    filtroAberto
+  );
+
+  useEffect(() => {
+    const parent = navigation.getParent();
+    if (sheetAberto) {
+      parent?.setOptions({ tabBarStyle: { display: "none" } });
+      navigation.setOptions({ tabBarStyle: { display: "none" } });
+    } else {
+      const defaultStyle = {
+        backgroundColor: "#fff",
+        borderTopWidth: 1,
+        borderTopColor: "#f1f5f9",
+        height: 60,
+        paddingBottom: 8,
+        paddingTop: 8,
+      };
+      parent?.setOptions({ tabBarStyle: defaultStyle });
+      navigation.setOptions({ tabBarStyle: defaultStyle });
+    }
+
+    return () => {
+      const defaultStyle = {
+        backgroundColor: "#fff",
+        borderTopWidth: 1,
+        borderTopColor: "#f1f5f9",
+        height: 60,
+        paddingBottom: 8,
+        paddingTop: 8,
+      };
+      parent?.setOptions({ tabBarStyle: defaultStyle });
+      navigation.setOptions({ tabBarStyle: defaultStyle });
+    };
+  }, [sheetAberto, navigation]);
 
   const {
     diaSelecionado,
@@ -208,7 +255,7 @@ export default function AgendaSecretariaScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top > 0 ? insets.top + 6 : 14 }]}>
         <View style={styles.headerTop}>
           <Text style={styles.title}>Agenda</Text>
 
@@ -287,11 +334,19 @@ export default function AgendaSecretariaScreen() {
             firstDay={1}
             hideExtraDays
             theme={{
-              todayTextColor: "#f77433",
-
-              arrowColor: "#f77433",
-
-              selectedDayBackgroundColor: "#f77433",
+              backgroundColor: colors.surfaceCard,
+              calendarBackground: colors.surfaceCard,
+              textSectionTitleColor: colors.textSecondary,
+              selectedDayBackgroundColor: colors.primary,
+              selectedDayTextColor: '#ffffff',
+              todayTextColor: colors.primary,
+              dayTextColor: colors.text,
+              textDisabledColor: colors.textMuted,
+              dotColor: colors.primary,
+              selectedDotColor: '#ffffff',
+              arrowColor: colors.primary,
+              monthTextColor: colors.text,
+              indicatorColor: colors.primary,
             }}
             onDayPress={(day: { dateString: string }) => {
               selecionarDia(day.dateString);
@@ -458,155 +513,110 @@ export default function AgendaSecretariaScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f8fafc" },
-
-  header: {
-    paddingHorizontal: 20,
-
-    paddingTop: 18,
-
-    paddingBottom: 14,
-
-    backgroundColor: "#fff",
-
-    borderBottomWidth: 1,
-
-    borderColor: "#f1f5f9",
-  },
-
-  headerTop: {
-    flexDirection: "row",
-
-    justifyContent: "space-between",
-
-    alignItems: "center",
-
-    marginBottom: 14,
-  },
-
-  title: { fontSize: 24, fontWeight: "800", color: "#0f172a" },
-
-  monthButton: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    backgroundColor: "#fff3eb",
-
-    paddingHorizontal: 12,
-
-    paddingVertical: 7,
-
-    borderRadius: 10,
-
-    gap: 4,
-  },
-
-  monthButtonText: { color: "#f77433", fontWeight: "bold", fontSize: 13.5 },
-
-  filtros: { flexDirection: "row", gap: 10, marginBottom: 14 },
-
-  chip: {
-    flex: 1,
-
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    gap: 6,
-
-    backgroundColor: "#f8fafc",
-
-    borderWidth: 1.5,
-
-    borderColor: "#f1f5f9",
-
-    paddingHorizontal: 12,
-
-    paddingVertical: 9,
-
-    borderRadius: 12,
-  },
-
-  chipAtivo: { backgroundColor: "#fff3eb", borderColor: "#f77433" },
-
-  chipText: { flex: 1, fontSize: 12.5, color: "#64748b", fontWeight: "600" },
-
-  chipTextAtivo: { color: "#f77433" },
-
-  fullCalendar: { borderRadius: 12 },
-
-  listaHeader: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    justifyContent: "space-between",
-
-    paddingHorizontal: 20,
-
-    paddingTop: 18,
-
-    paddingBottom: 10,
-  },
-
-  listaTitulo: { fontSize: 15, fontWeight: "700", color: "#0f172a" },
-
-  listaContagem: { fontSize: 12.5, color: "#94a3b8", fontWeight: "600" },
-
-  listContent: { paddingHorizontal: 20, paddingBottom: 100 },
-
-  center: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 48,
-    gap: 10,
-  },
-
-  vazioTexto: { fontSize: 14, color: "#94a3b8", textAlign: "center" },
-
-  retryBtn: {
-    marginTop: 4,
-
-    paddingHorizontal: 16,
-
-    paddingVertical: 9,
-
-    borderRadius: 10,
-
-    backgroundColor: "#fff3eb",
-  },
-
-  retryText: { color: "#f77433", fontWeight: "700", fontSize: 13 },
-
-  fab: {
-    position: "absolute",
-
-    right: 20,
-
-    bottom: 24,
-
-    width: 56,
-
-    height: 56,
-
-    borderRadius: 28,
-
-    backgroundColor: "#f77433",
-
-    alignItems: "center",
-
-    justifyContent: "center",
-
-    shadowColor: "#f77433",
-
-    shadowOffset: { width: 0, height: 4 },
-
-    shadowOpacity: 0.4,
-
-    shadowRadius: 10,
-
-    elevation: 6,
-  },
-});
+const getStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+
+    header: {
+      paddingHorizontal: 16,
+      paddingBottom: 10,
+      backgroundColor: colors.surfaceCard,
+      borderBottomWidth: 1,
+      borderColor: colors.border,
+    },
+
+    headerTop: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 10,
+    },
+
+    title: { fontSize: 20, fontWeight: "800", color: colors.text },
+
+    monthButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.primaryLight,
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      borderRadius: 10,
+      gap: 4,
+    },
+
+    monthButtonText: { color: colors.primary, fontWeight: "bold", fontSize: 13.5 },
+
+    filtros: { flexDirection: "row", gap: 10, marginBottom: 14 },
+
+    chip: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      backgroundColor: colors.surfaceSubtle,
+      borderWidth: 1.5,
+      borderColor: colors.borderSubtle,
+      paddingHorizontal: 12,
+      paddingVertical: 9,
+      borderRadius: 12,
+    },
+
+    chipAtivo: { backgroundColor: colors.primaryLight, borderColor: colors.primary },
+
+    chipText: { flex: 1, fontSize: 12.5, color: colors.textSecondary, fontWeight: "600" },
+
+    chipTextAtivo: { color: colors.primary },
+
+    fullCalendar: { borderRadius: 12 },
+
+    listaHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 20,
+      paddingTop: 18,
+      paddingBottom: 10,
+    },
+
+    listaTitulo: { fontSize: 15, fontWeight: "700", color: colors.text },
+
+    listaContagem: { fontSize: 12.5, color: colors.textMuted, fontWeight: "600" },
+
+    listContent: { paddingHorizontal: 20, paddingBottom: 100 },
+
+    center: {
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 48,
+      gap: 10,
+    },
+
+    vazioTexto: { fontSize: 14, color: colors.textMuted, textAlign: "center" },
+
+    retryBtn: {
+      marginTop: 4,
+      paddingHorizontal: 16,
+      paddingVertical: 9,
+      borderRadius: 10,
+      backgroundColor: colors.primaryLight,
+    },
+
+    retryText: { color: colors.primary, fontWeight: "700", fontSize: 13 },
+
+    fab: {
+      position: "absolute",
+      right: 20,
+      bottom: 24,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.4,
+      shadowRadius: 10,
+      elevation: 6,
+    },
+  });

@@ -75,6 +75,7 @@ export default function AusenciaSheet({
       visible={visible}
       transparent
       animationType="slide"
+      statusBarTranslucent={true}
       onRequestClose={onFechar}
     >
       <View style={styles.overlay}>

@@ -1,5 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
-
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -12,18 +11,14 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
-
 import { Feather } from "@expo/vector-icons";
-
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-
 import * as ImagePicker from "expo-image-picker";
-
 import DateTimePicker from "@react-native-community/datetimepicker";
-
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
 import { useAuth, Especialidade } from "@/contexts/AuthContext";
+import { useTheme, ThemeColors } from "@/contexts/ThemeContext";
 
 import api from "@/services/api";
 
@@ -145,8 +140,10 @@ function formatarDataBr(iso?: string): string {
 
 export default function ProfileScreen() {
   const { user, updateUser, logout } = useAuth();
-
+  const { isDark, toggleTheme, colors } = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const styles = useMemo(() => getStyles(colors), [colors]);
 
   const [userData, setUserData] = useState<UserForm>(emptyForm);
 
@@ -559,7 +556,7 @@ export default function ProfileScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top > 0 ? insets.top + 10 : 20 }]}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
@@ -928,18 +925,43 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* Notificações */}
+      {/* Preferências (Modo Escuro e Notificações) */}
 
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Feather name="bell" size={20} color="#f77433" />
+          <Feather name="settings" size={20} color={colors.primary} />
 
-          <Text style={styles.cardTitle}>Preferências de Notificação</Text>
+          <Text style={styles.cardTitle}>Preferências</Text>
         </View>
 
+        {/* Modo Escuro */}
+        <View style={[styles.switchRow, { marginBottom: 12 }]}>
+          <View style={styles.switchTextWrap}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 2 }}>
+              <Feather name={isDark ? "moon" : "sun"} size={16} color={colors.primary} />
+              <Text style={styles.switchTitle}>Modo Escuro</Text>
+            </View>
+
+            <Text style={styles.switchSubtitle}>
+              {isDark ? "Tema escuro ativo em todo o aplicativo" : "Ative o tema escuro em todo o aplicativo"}
+            </Text>
+          </View>
+
+          <Switch
+            value={isDark}
+            onValueChange={toggleTheme}
+            trackColor={{ false: "#cbd5e1", true: "#f77433" }}
+            thumbColor="#fff"
+          />
+        </View>
+
+        {/* Notificações */}
         <View style={styles.switchRow}>
           <View style={styles.switchTextWrap}>
-            <Text style={styles.switchTitle}>Receber Notificações</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 2 }}>
+              <Feather name="bell" size={16} color={colors.primary} />
+              <Text style={styles.switchTitle}>Receber Notificações</Text>
+            </View>
 
             <Text style={styles.switchSubtitle}>
               Receba atualizações sobre suas aulas e lembretes
@@ -1046,332 +1068,219 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f8fafc" },
-
-  content: { padding: 20, paddingTop: 24, paddingBottom: 60 },
-
-  header: { marginBottom: 16 },
-
-  pageTitle: { fontSize: 24, fontWeight: "bold", color: "#0f172a" },
-
-  pageSubtitle: { fontSize: 14, color: "#64748b", marginTop: 4 },
-
-  card: {
-    backgroundColor: "#fff",
-
-    borderRadius: 16,
-
-    padding: 20,
-
-    marginBottom: 16,
-
-    shadowColor: "#000",
-
-    shadowOffset: { width: 0, height: 2 },
-
-    shadowOpacity: 0.04,
-
-    shadowRadius: 8,
-
-    elevation: 2,
-
-    borderWidth: 1,
-
-    borderColor: "#f1f5f9",
-  },
-
-  profileHeader: { flexDirection: "row", alignItems: "center" },
-
-  avatarContainer: { position: "relative", marginRight: 16 },
-
-  avatar: {
-    width: 80,
-
-    height: 80,
-
-    borderRadius: 40,
-
-    backgroundColor: "#fff3eb",
-
-    justifyContent: "center",
-
-    alignItems: "center",
-
-    borderWidth: 3,
-
-    borderColor: "#f77433",
-  },
-
-  avatarImage: {
-    width: 80,
-
-    height: 80,
-
-    borderRadius: 40,
-
-    borderWidth: 3,
-
-    borderColor: "#f77433",
-
-    backgroundColor: "#fff3eb",
-  },
-
-  avatarText: { fontSize: 32, fontWeight: "bold", color: "#f77433" },
-
-  cameraButton: {
-    position: "absolute",
-
-    bottom: 0,
-
-    right: 0,
-
-    backgroundColor: "#f77433",
-
-    width: 28,
-
-    height: 28,
-
-    borderRadius: 14,
-
-    justifyContent: "center",
-
-    alignItems: "center",
-
-    borderWidth: 2,
-
-    borderColor: "#fff",
-  },
-
-  profileInfo: { flex: 1 },
-
-  profileName: { fontSize: 20, fontWeight: "bold", color: "#0f172a" },
-
-  profileRole: { fontSize: 14, color: "#64748b", marginTop: 2 },
-
-  badge: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    alignSelf: "flex-start",
-
-    backgroundColor: "#fff3eb",
-
-    borderRadius: 12,
-
-    paddingHorizontal: 10,
-
-    paddingVertical: 4,
-
-    marginTop: 8,
-
-    gap: 4,
-  },
-
-  badgeText: { fontSize: 12, color: "#f77433", fontWeight: "600" },
-
-  cardHeader: { flexDirection: "row", alignItems: "center", marginBottom: 16 },
-
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#0f172a",
-    marginLeft: 8,
-  },
-
-  inputGroup: { marginBottom: 16 },
-
-  rowGroup: { flexDirection: "row", gap: 12 },
-
-  flex1: { flex: 1 },
-
-  flex2: { flex: 2 },
-
-  label: { fontSize: 13, fontWeight: "600", color: "#0f172a", marginBottom: 8 },
-
-  inputContainer: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    backgroundColor: "#f8fafc",
-
-    borderRadius: 12,
-
-    borderWidth: 2,
-
-    borderColor: "#f1f5f9",
-
-    paddingHorizontal: 14,
-  },
-
-  inputIcon: { marginRight: 10 },
-
-  input: {
-    flex: 1,
-
-    paddingVertical: 12,
-
-    fontSize: 15,
-
-    color: "#0f172a",
-  },
-
-  inputNoIcon: { paddingLeft: 2 },
-
-  placeholderText: { color: "#94a3b8" },
-
-  switchRow: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    justifyContent: "space-between",
-
-    backgroundColor: "#f8fafc",
-
-    borderRadius: 12,
-
-    padding: 16,
-  },
-
-  switchTextWrap: { flex: 1, paddingRight: 12 },
-
-  switchTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#0f172a",
-    marginBottom: 2,
-  },
-
-  switchSubtitle: { fontSize: 13, color: "#64748b" },
-
-  chipsWrap: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-
-  chip: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    gap: 6,
-
-    paddingHorizontal: 14,
-
-    paddingVertical: 8,
-
-    borderRadius: 20,
-
-    backgroundColor: "#f1f5f9",
-
-    borderWidth: 1,
-
-    borderColor: "#e2e8f0",
-  },
-
-  chipSelected: { backgroundColor: "#f77433", borderColor: "#f77433" },
-
-  chipText: { fontSize: 14, color: "#475569", fontWeight: "500" },
-
-  chipTextSelected: { color: "#fff" },
-
-  saveButton: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    justifyContent: "center",
-
-    gap: 8,
-
-    backgroundColor: "#f77433",
-
-    borderRadius: 12,
-
-    paddingVertical: 15,
-
-    marginTop: 4,
-
-    shadowColor: "#f77433",
-
-    shadowOffset: { width: 0, height: 4 },
-
-    shadowOpacity: 0.3,
-
-    shadowRadius: 8,
-
-    elevation: 3,
-  },
-
-  saveButtonDisabled: { backgroundColor: "#f7743380", shadowOpacity: 0 },
-
-  saveButtonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
-
-  cancelButton: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    justifyContent: "center",
-
-    gap: 8,
-
-    backgroundColor: "#e2e8f0",
-
-    borderRadius: 12,
-
-    paddingVertical: 15,
-
-    marginTop: 12,
-  },
-
-  cancelButtonText: { color: "#475569", fontSize: 16, fontWeight: "bold" },
-
-  changePasswordButton: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    justifyContent: "center",
-
-    gap: 8,
-
-    backgroundColor: "#fff",
-
-    borderRadius: 12,
-
-    paddingVertical: 15,
-
-    marginTop: 12,
-
-    borderWidth: 1,
-
-    borderColor: "#e2e8f0",
-  },
-
-  changePasswordText: { color: "#475569", fontSize: 15, fontWeight: "600" },
-
-  logoutButton: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    justifyContent: "center",
-
-    gap: 8,
-
-    borderRadius: 12,
-
-    paddingVertical: 15,
-
-    marginTop: 12,
-
-    borderWidth: 1,
-
-    borderColor: "#fecaca",
-
-    backgroundColor: "#fef2f2",
-  },
-
-  logoutButtonText: { color: "#ef4444", fontSize: 15, fontWeight: "600" },
-});
+const getStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    content: { paddingHorizontal: 16, paddingBottom: 40 },
+    header: { marginBottom: 16 },
+    pageTitle: { fontSize: 20, fontWeight: "800", color: colors.text },
+    pageSubtitle: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
+
+    card: {
+      backgroundColor: colors.surfaceCard,
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 16,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: colors.isDark ? 0.25 : 0.04,
+      shadowRadius: 8,
+      elevation: 2,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+
+    profileHeader: { flexDirection: "row", alignItems: "center" },
+    avatarContainer: { position: "relative", marginRight: 16 },
+
+    avatar: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: colors.isDark ? "#222228" : "#fff3eb",
+      justifyContent: "center",
+      alignItems: "center",
+      borderWidth: 3,
+      borderColor: colors.primary,
+    },
+
+    avatarImage: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      borderWidth: 3,
+      borderColor: colors.primary,
+      backgroundColor: colors.isDark ? "#222228" : "#fff3eb",
+    },
+
+    avatarText: { fontSize: 32, fontWeight: "bold", color: colors.primary },
+
+    cameraButton: {
+      position: "absolute",
+      bottom: 0,
+      right: 0,
+      backgroundColor: colors.primary,
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      justifyContent: "center",
+      alignItems: "center",
+      borderWidth: 2,
+      borderColor: colors.surfaceCard,
+    },
+
+    profileInfo: { flex: 1 },
+    profileName: { fontSize: 20, fontWeight: "bold", color: colors.text },
+    profileRole: { fontSize: 14, color: colors.textSecondary, marginTop: 2 },
+
+    badge: {
+      flexDirection: "row",
+      alignItems: "center",
+      alignSelf: "flex-start",
+      backgroundColor: colors.isDark ? "rgba(234, 96, 30, 0.2)" : "#fff3eb",
+      borderRadius: 12,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      marginTop: 8,
+      gap: 4,
+    },
+
+    badgeText: { fontSize: 12, color: colors.primary, fontWeight: "600" },
+
+    cardHeader: { flexDirection: "row", alignItems: "center", marginBottom: 16 },
+
+    cardTitle: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: colors.text,
+      marginLeft: 8,
+    },
+
+    inputGroup: { marginBottom: 16 },
+    rowGroup: { flexDirection: "row", gap: 12 },
+    flex1: { flex: 1 },
+    flex2: { flex: 2 },
+    label: { fontSize: 13, fontWeight: "600", color: colors.text, marginBottom: 8 },
+
+    inputContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.inputBg,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      borderColor: colors.inputBorder,
+      paddingHorizontal: 14,
+    },
+
+    inputIcon: { marginRight: 10 },
+
+    input: {
+      flex: 1,
+      paddingVertical: 12,
+      fontSize: 15,
+      color: colors.inputText,
+    },
+
+    inputNoIcon: { paddingLeft: 2 },
+    placeholderText: { color: colors.inputPlaceholder },
+
+    switchRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: colors.surfaceSubtle,
+      borderRadius: 12,
+      padding: 16,
+    },
+
+    switchTextWrap: { flex: 1, paddingRight: 12 },
+
+    switchTitle: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: colors.text,
+      marginBottom: 2,
+    },
+
+    switchSubtitle: { fontSize: 13, color: colors.textSecondary },
+
+    chipsWrap: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+
+    chip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 20,
+      backgroundColor: colors.surfaceSubtle,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+    },
+
+    chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+    chipText: { fontSize: 14, color: colors.textSecondary, fontWeight: "500" },
+    chipTextSelected: { color: "#fff" },
+
+    saveButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      backgroundColor: colors.primary,
+      borderRadius: 12,
+      paddingVertical: 15,
+      marginTop: 4,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+
+    saveButtonDisabled: { backgroundColor: colors.primary + "80", shadowOpacity: 0 },
+    saveButtonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+
+    cancelButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      backgroundColor: colors.isDark ? "#27272f" : "#e2e8f0",
+      borderRadius: 12,
+      paddingVertical: 15,
+      marginTop: 12,
+    },
+
+    cancelButtonText: { color: colors.isDark ? "#cbd5e1" : "#475569", fontSize: 16, fontWeight: "bold" },
+
+    changePasswordButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      backgroundColor: colors.surfaceCard,
+      borderRadius: 12,
+      paddingVertical: 15,
+      marginTop: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+
+    changePasswordText: { color: colors.textSecondary, fontSize: 15, fontWeight: "600" },
+
+    logoutButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      borderRadius: 12,
+      paddingVertical: 15,
+      marginTop: 12,
+      borderWidth: 1,
+      borderColor: colors.dangerBorder,
+      backgroundColor: colors.dangerBg,
+    },
+
+    logoutButtonText: { color: colors.danger, fontSize: 15, fontWeight: "600" },
+  });

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 
 import {
   View,
@@ -13,10 +13,12 @@ import {
 } from "react-native";
 
 import { Feather } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useFocusEffect, useRouter } from "expo-router";
 
 import api from "@/services/api";
+import { useTheme, ThemeColors } from "@/contexts/ThemeContext";
 
 interface Aluno {
   id: number;
@@ -58,6 +60,9 @@ function calcularIdade(dataNascimento?: string): number | null {
 
 export default function AlunosScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const styles = useMemo(() => getStyles(colors), [colors]);
 
   const [alunos, setAlunos] = useState<Aluno[]>([]);
 
@@ -282,7 +287,7 @@ export default function AlunosScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top > 0 ? insets.top + 6 : 14 }]}>
         <View style={styles.headerTop}>
           <Text style={styles.title}>Alunos</Text>
 
@@ -295,12 +300,12 @@ export default function AlunosScreen() {
         </View>
 
         <View style={styles.searchContainer}>
-          <Feather name="search" size={20} color="#94a3b8" />
+          <Feather name="search" size={20} color={colors.textMuted} />
 
           <TextInput
             style={styles.searchInput}
             placeholder="Buscar por nome..."
-            placeholderTextColor="#94a3b8"
+            placeholderTextColor={colors.inputPlaceholder}
             value={busca}
             onChangeText={setBusca}
           />
@@ -335,7 +340,7 @@ export default function AlunosScreen() {
 
       {loading && !refreshing ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#f77433" />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
         <FlatList
@@ -348,329 +353,307 @@ export default function AlunosScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor="#f77433"
+              tintColor={colors.primary}
             />
           }
           ListEmptyComponent={
             <Text style={styles.empty}>Nenhum aluno encontrado.</Text>
           }
-          ListFooterComponent={
-            alunos.length > 0 ? (
-              <View style={styles.pagination}>
-                <Text style={styles.paginationInfo}>
-                  {startIndex}–{endIndex} de {totalRegistros}
-                </Text>
-
-                <View style={styles.paginationControls}>
-                  <TouchableOpacity
-                    style={[
-                      styles.pageBtn,
-                      page === 1 && styles.pageBtnDisabled,
-                    ]}
-                    disabled={page === 1}
-                    onPress={() => setPage((p) => Math.max(1, p - 1))}
-                  >
-                    <Feather
-                      name="arrow-left"
-                      size={18}
-                      color={page === 1 ? "#cbd5e1" : "#334155"}
-                    />
-                  </TouchableOpacity>
-
-                  <Text style={styles.pageLabel}>
-                    {page} / {totalPaginas}
-                  </Text>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.pageBtn,
-                      page >= totalPaginas && styles.pageBtnDisabled,
-                    ]}
-                    disabled={page >= totalPaginas}
-                    onPress={() =>
-                      setPage((p) => Math.min(totalPaginas, p + 1))
-                    }
-                  >
-                    <Feather
-                      name="arrow-right"
-                      size={18}
-                      color={page >= totalPaginas ? "#cbd5e1" : "#334155"}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : null
-          }
         />
+      )}
+
+      {/* Barra de Paginação Fixa na Base da Tela (Acima das Tabs) */}
+      {!loading && totalRegistros > 0 && (
+        <View style={styles.bottomPaginationBar}>
+          <Text style={styles.paginationInfo}>
+            {startIndex}–{endIndex} de <Text style={styles.paginationHighlight}>{totalRegistros}</Text> alunos
+          </Text>
+
+          <View style={styles.paginationControls}>
+            <TouchableOpacity
+              style={[
+                styles.pageBtn,
+                page === 1 && styles.pageBtnDisabled,
+              ]}
+              disabled={page === 1}
+              onPress={() => setPage((p) => Math.max(1, p - 1))}
+              activeOpacity={0.7}
+            >
+              <Feather
+                name="chevron-left"
+                size={18}
+                color={page === 1 ? colors.borderSubtle : colors.primary}
+              />
+            </TouchableOpacity>
+
+            <View style={styles.pageLabelPill}>
+              <Text style={styles.pageLabelCurrent}>{page}</Text>
+              <Text style={styles.pageLabelDivider}>/</Text>
+              <Text style={styles.pageLabelTotal}>{totalPaginas}</Text>
+            </View>
+
+            <TouchableOpacity
+              style={[
+                styles.pageBtn,
+                page >= totalPaginas && styles.pageBtnDisabled,
+              ]}
+              disabled={page >= totalPaginas}
+              onPress={() => setPage((p) => Math.min(totalPaginas, p + 1))}
+              activeOpacity={0.7}
+            >
+              <Feather
+                name="chevron-right"
+                size={18}
+                color={page >= totalPaginas ? colors.borderSubtle : colors.primary}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
       )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f8fafc" },
-
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
-
-  header: {
-    padding: 24,
-
-    backgroundColor: "#fff",
-
-    borderBottomWidth: 1,
-
-    borderColor: "#e5e7eb",
-  },
-
-  headerTop: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    justifyContent: "space-between",
-
-    marginBottom: 12,
-  },
-
-  title: { fontSize: 24, fontWeight: "800", color: "#0f172a" },
-
-  addButton: {
-    backgroundColor: "#f77433",
-
-    paddingHorizontal: 16,
-
-    paddingVertical: 10,
-
-    borderRadius: 10,
-
-    shadowColor: "#f77433",
-
-    shadowOffset: { width: 0, height: 4 },
-
-    shadowOpacity: 0.3,
-
-    shadowRadius: 8,
-
-    elevation: 4,
-  },
-
-  addButtonText: { color: "#fff", fontWeight: "bold", fontSize: 13 },
-
-  searchContainer: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    backgroundColor: "#fff",
-
-    borderRadius: 10,
-
-    paddingHorizontal: 14,
-
-    height: 44,
-
-    borderWidth: 1,
-
-    borderColor: "#e2e8f0",
-  },
-
-  searchInput: { flex: 1, marginLeft: 10, fontSize: 15, color: "#0f172a" },
-
-  filterRow: { flexDirection: "row", gap: 8, marginTop: 12 },
-
-  filterChip: {
-    paddingHorizontal: 14,
-
-    paddingVertical: 7,
-
-    borderRadius: 999,
-
-    backgroundColor: "#f1f5f9",
-
-    borderWidth: 1,
-
-    borderColor: "#e2e8f0",
-  },
-
-  filterChipActive: { backgroundColor: "#f77433", borderColor: "#f77433" },
-
-  filterChipText: { fontSize: 12, fontWeight: "700", color: "#64748b" },
-
-  filterChipTextActive: { color: "#fff" },
-
-  listContent: { padding: 24 },
-
-  empty: {
-    textAlign: "center",
-    color: "#94a3b8",
-    fontWeight: "500",
-    marginTop: 40,
-  },
-
-  studentCard: {
-    backgroundColor: "#fff",
-
-    borderRadius: 16,
-
-    padding: 16,
-
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    marginBottom: 16,
-
-    shadowColor: "#000",
-
-    shadowOffset: { width: 0, height: 2 },
-
-    shadowOpacity: 0.04,
-
-    shadowRadius: 8,
-
-    elevation: 2,
-
-    borderWidth: 1,
-
-    borderColor: "#f1f5f9",
-  },
-
-  avatar: {
-    width: 48,
-
-    height: 48,
-
-    borderRadius: 24,
-
-    backgroundColor: "#fff3eb",
-
-    justifyContent: "center",
-
-    alignItems: "center",
-
-    marginRight: 16,
-  },
-
-  avatarText: { fontSize: 20, fontWeight: "bold", color: "#f77433" },
-
-  infoContainer: { flex: 1 },
-
-  studentName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#0f172a",
-    marginBottom: 4,
-  },
-
-  studentSub: { fontSize: 13, color: "#64748b", fontWeight: "500" },
-
-  limitBadge: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    alignSelf: "flex-start",
-
-    gap: 4,
-
-    marginTop: 6,
-
-    paddingHorizontal: 8,
-
-    paddingVertical: 3,
-
-    borderRadius: 8,
-
-    backgroundColor: "#fffbeb",
-
-    borderWidth: 1,
-
-    borderColor: "#fde68a",
-  },
-
-  limitBadgeText: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "#b45309",
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-  },
-
-  rightSide: { alignItems: "flex-end", gap: 8 },
-
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-
-  statusActive: { backgroundColor: "#ecfdf5", borderColor: "#d1fae5" },
-
-  statusInactive: { backgroundColor: "#fff1f2", borderColor: "#ffe4e6" },
-
-  statusText: {
-    fontSize: 11,
-    fontWeight: "bold",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-
-  statusTextActive: { color: "#047857" },
-
-  statusTextInactive: { color: "#be123c" },
-
-  actions: { flexDirection: "row", gap: 6 },
-
-  actionBtn: {
-    width: 32,
-
-    height: 32,
-
-    borderRadius: 8,
-
-    backgroundColor: "#f8fafc",
-
-    justifyContent: "center",
-
-    alignItems: "center",
-
-    borderWidth: 1,
-
-    borderColor: "#f1f5f9",
-  },
-
-  pagination: { alignItems: "center", gap: 12, paddingVertical: 12 },
-
-  paginationInfo: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#94a3b8",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-
-  paginationControls: { flexDirection: "row", alignItems: "center", gap: 16 },
-
-  pageBtn: {
-    width: 40,
-
-    height: 40,
-
-    borderRadius: 12,
-
-    backgroundColor: "#fff",
-
-    borderWidth: 1,
-
-    borderColor: "#e2e8f0",
-
-    justifyContent: "center",
-
-    alignItems: "center",
-  },
-
-  pageBtnDisabled: { opacity: 0.5 },
-
-  pageLabel: { fontSize: 14, fontWeight: "700", color: "#334155" },
-});
+const getStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+
+    center: { flex: 1, justifyContent: "center", alignItems: "center" },
+
+    header: {
+      paddingHorizontal: 16,
+      paddingBottom: 10,
+      backgroundColor: colors.surfaceCard,
+      borderBottomWidth: 1,
+      borderColor: colors.border,
+    },
+
+    headerTop: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 10,
+    },
+
+    title: { fontSize: 20, fontWeight: "800", color: colors.text },
+
+    addButton: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 10,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+
+    addButtonText: { color: "#fff", fontWeight: "bold", fontSize: 13 },
+
+    searchContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.inputBg,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      height: 44,
+      borderWidth: 1,
+      borderColor: colors.inputBorder,
+    },
+
+    searchInput: { flex: 1, marginLeft: 10, fontSize: 15, color: colors.inputText },
+
+    filterRow: { flexDirection: "row", gap: 8, marginTop: 12 },
+
+    filterChip: {
+      paddingHorizontal: 14,
+      paddingVertical: 7,
+      borderRadius: 999,
+      backgroundColor: colors.surfaceSubtle,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+    },
+
+    filterChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+
+    filterChipText: { fontSize: 12, fontWeight: "700", color: colors.textSecondary },
+
+    filterChipTextActive: { color: "#fff" },
+
+    listContent: { padding: 16, paddingBottom: 24 },
+
+    empty: {
+      textAlign: "center",
+      color: colors.textMuted,
+      fontWeight: "500",
+      marginTop: 40,
+    },
+
+    studentCard: {
+      backgroundColor: colors.surfaceCard,
+      borderRadius: 16,
+      padding: 16,
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 16,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      elevation: 2,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+
+    avatar: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: colors.primaryLight,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 16,
+    },
+
+    avatarText: { fontSize: 20, fontWeight: "bold", color: colors.primary },
+
+    infoContainer: { flex: 1 },
+
+    studentName: {
+      fontSize: 16,
+      fontWeight: "bold",
+      color: colors.text,
+      marginBottom: 4,
+    },
+
+    studentSub: { fontSize: 13, color: colors.textSecondary, fontWeight: "500" },
+
+    limitBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      alignSelf: "flex-start",
+      gap: 4,
+      marginTop: 6,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 8,
+      backgroundColor: colors.isDark ? "rgba(245, 158, 11, 0.2)" : "#fffbeb",
+      borderWidth: 1,
+      borderColor: colors.isDark ? "rgba(245, 158, 11, 0.4)" : "#fde68a",
+    },
+
+    limitBadgeText: {
+      fontSize: 10,
+      fontWeight: "700",
+      color: colors.isDark ? "#fbbf24" : "#b45309",
+      textTransform: "uppercase",
+      letterSpacing: 0.4,
+    },
+
+    rightSide: { alignItems: "flex-end", gap: 8 },
+
+    statusBadge: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 16,
+      borderWidth: 1,
+    },
+
+    statusActive: {
+      backgroundColor: colors.isDark ? "rgba(16, 185, 129, 0.15)" : "#ecfdf5",
+      borderColor: colors.isDark ? "rgba(16, 185, 129, 0.3)" : "#d1fae5",
+    },
+
+    statusInactive: {
+      backgroundColor: colors.isDark ? "rgba(244, 63, 94, 0.15)" : "#fff1f2",
+      borderColor: colors.isDark ? "rgba(244, 63, 94, 0.3)" : "#ffe4e6",
+    },
+
+    statusText: {
+      fontSize: 11,
+      fontWeight: "bold",
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+
+    statusTextActive: { color: colors.isDark ? "#34d399" : "#047857" },
+
+    statusTextInactive: { color: colors.isDark ? "#fb7185" : "#be123c" },
+
+    actions: { flexDirection: "row", gap: 6 },
+
+    actionBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: 8,
+      backgroundColor: colors.surfaceSubtle,
+      justifyContent: "center",
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+    },
+
+    bottomPaginationBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      backgroundColor: "transparent",
+    },
+
+    paginationInfo: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      fontWeight: "500",
+    },
+
+    paginationHighlight: {
+      color: colors.text,
+      fontWeight: "700",
+    },
+
+    paginationControls: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+    },
+
+    pageBtn: {
+      width: 32,
+      height: 32,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+
+    pageBtnDisabled: {
+      opacity: 0.3,
+    },
+
+    pageLabelPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 6,
+      paddingVertical: 4,
+      gap: 4,
+    },
+
+    pageLabelCurrent: {
+      fontSize: 14,
+      fontWeight: "800",
+      color: colors.primary,
+    },
+
+    pageLabelDivider: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.textMuted,
+    },
+
+    pageLabelTotal: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.textSecondary,
+    },
+  });

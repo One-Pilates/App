@@ -1,16 +1,18 @@
 import { Redirect, Tabs } from 'expo-router';
-import { View, ActivityIndicator, Image } from 'react-native';
+import { View, ActivityIndicator, Image, Easing } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 // Fluxo de Professor.
 export default function TeacherLayout() {
   const { signed, user, loading } = useAuth();
+  const { colors } = useTheme();
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0f4ff' }}>
-        <ActivityIndicator size="large" color="#f77433" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -22,26 +24,21 @@ export default function TeacherLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: true,
-        headerTitle: () => (
-          <Image
-            source={require('../../assets/logoBranca.png')}
-            style={{ width: 120, height: 40, resizeMode: 'contain' }}
-          />
-        ),
-        headerTitleAlign: 'center',
-        headerStyle: {
-          backgroundColor: '#f77433',
-          elevation: 0,
-          shadowOpacity: 0,
-          borderBottomWidth: 0,
+        headerShown: false,
+        animation: 'fade',
+        transitionSpec: {
+          animation: 'timing',
+          config: {
+            duration: 200,
+            easing: Easing.out(Easing.ease),
+          },
         },
-        tabBarActiveTintColor: '#f77433',
-        tabBarInactiveTintColor: '#94a3b8',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.tabInactive,
         tabBarStyle: {
-          backgroundColor: '#fff',
+          backgroundColor: colors.tabBg,
           borderTopWidth: 1,
-          borderTopColor: '#f1f5f9',
+          borderTopColor: colors.tabBorder,
           height: 60,
           paddingBottom: 8,
           paddingTop: 8,

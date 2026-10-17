@@ -1,21 +1,20 @@
-import { Alert } from "react-native";
+import { triggerAlert } from "./alertManager";
 
-// Feedback ao usuário. Encapsula Alert nativo; trocar por lib de toast depois é só mudar aqui.
-
+// Feedback padronizado ao usuário (estilo OnePilates: branco e laranja).
 export const notify = {
   success(message: string, title = "Sucesso") {
-    Alert.alert(title, message);
+    triggerAlert({ title, message, type: "success" });
   },
 
   error(message: string, title = "Erro") {
-    Alert.alert(title, message);
+    triggerAlert({ title, message, type: "error" });
   },
 
   warning(message: string, title = "Atenção") {
-    Alert.alert(title, message);
+    triggerAlert({ title, message, type: "warning" });
   },
 
   info(message: string, title = "Aviso") {
-    Alert.alert(title, message);
+    triggerAlert({ title, message, type: "info" });
   },
 };

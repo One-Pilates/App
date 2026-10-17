@@ -16,7 +16,7 @@ import {
 } from "react-native";
 
 import { Feather } from "@expo/vector-icons";
-
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -128,7 +128,7 @@ function formatarDataBr(iso?: string): string {
 
 export default function StudentForm({ alunoId }: { alunoId?: string }) {
   const router = useRouter();
-
+  const insets = useSafeAreaInsets();
   const isEditMode = !!alunoId;
 
   const [etapaAtual, setEtapaAtual] = useState(1);
@@ -549,8 +549,7 @@ export default function StudentForm({ alunoId }: { alunoId?: string }) {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       {/* Header */}
-
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top > 0 ? insets.top + 6 : 14 }]}>
         <View style={styles.headerTop}>
           <TouchableOpacity style={styles.backButton} onPress={sair}>
             <Feather name="arrow-left" size={22} color="#0f172a" />
