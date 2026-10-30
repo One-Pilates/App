@@ -74,7 +74,75 @@ function limparTagsInline(html: string): string {
       .replace(/<br\s*\/?>/gi, "\n")
       .replace(/<\/?(?:strong|b|em|i|span|p)[^>]*>/gi, "")
       .replace(/<[^>]+>/g, "")
+      .replace(/\*{2,3}/g, "")
   ).trim();
+}
+
+/**
+ * Normaliza marcações Markdown (***negrito itálico***, **negrito**, *itálico*,
+ * títulos ### e listas - / 1.) para tags HTML suportadas pelo renderizador nativo.
+ */
+function normalizarMarkdownParaHtml(textoBruto: string): string {
+  if (!textoBruto) return "";
+
+  let texto = textoBruto.replace(/\r\n/g, "\n");
+
+  // Converte títulos Markdown (ex: ### Resumo do estúdio) em <h3>
+  texto = texto.replace(/^\s*#{1,6}\s+(.+)$/gm, "<h3>$1</h3>");
+
+  // Converte linhas inteiras que são apenas ***Título*** em <h3><strong>Título</strong></h3>
+  texto = texto.replace(/^\s*\*\*\*([^*\n]+)\*\*\*\s*$/gm, "<h3>$1</h3>");
+
+  // Converte ***texto*** (negrito + itálico) -> <strong><em>texto</em></strong>
+  texto = texto.replace(/\*\*\*([\s\S]+?)\*\*\*/g, "<strong><em>$1</em></strong>");
+
+  // Converte **texto** ou __texto__ (negrito) -> <strong>texto</strong>
+  texto = texto.replace(/\*\*([\s\S]+?)\*\*/g, "<strong>$1</strong>");
+  texto = texto.replace(/__([\s\S]+?)__/g, "<strong>$1</strong>");
+
+  // Converte *texto* isolado (itálico) -> <em>texto</em>
+  texto = texto.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, "<em>$1</em>");
+
+  // Remove eventuais asteriscos duplos/triplos órfãos que a IA tenha deixado sem fechar
+  texto = texto.replace(/\*{2,}/g, "");
+
+  // Se não houver listas HTML explícitas, converte listas Markdown (- item / • item / 1. item)
+  if (!/<(?:ul|ol)\b/i.test(texto)) {
+    const linhas = texto.split("\n");
+    const resultado: string[] = [];
+    let listaAtual: { tipo: "ul" | "ol"; itens: string[] } | null = null;
+
+    const fecharLista = () => {
+      if (listaAtual) {
+        const tag = listaAtual.tipo;
+        const lis = listaAtual.itens.map((it) => `<li>${it}</li>`).join("");
+        resultado.push(`<${tag}>${lis}</${tag}>`);
+        listaAtual = null;
+      }
+    };
+
+    for (const linha of linhas) {
+      const matchUl = linha.match(/^\s*[-*•]\s+(.+)$/);
+      const matchOl = linha.match(/^\s*\d+[.)]\s+(.+)$/);
+
+      if (matchUl) {
+        if (listaAtual && listaAtual.tipo !== "ul") fecharLista();
+        if (!listaAtual) listaAtual = { tipo: "ul", itens: [] };
+        listaAtual.itens.push(matchUl[1].trim());
+      } else if (matchOl) {
+        if (listaAtual && listaAtual.tipo !== "ol") fecharLista();
+        if (!listaAtual) listaAtual = { tipo: "ol", itens: [] };
+        listaAtual.itens.push(matchOl[1].trim());
+      } else {
+        fecharLista();
+        resultado.push(linha);
+      }
+    }
+    fecharLista();
+    texto = resultado.join("\n");
+  }
+
+  return texto;
 }
 
 /**
@@ -91,12 +159,29 @@ function TextoFormatadoInline({
   boldStyle?: any;
   italicStyle?: any;
 }) {
-  const normalizado = decodificarEntidades(html.replace(/<br\s*\/?>/gi, "\n"));
-  const partes = normalizado.split(/(<(?:strong|b|em|i)>[\s\S]*?<\/(?:strong|b|em|i)>)/gi);
+  const comMarkdown = normalizarMarkdownParaHtml(html);
+  const normalizado = decodificarEntidades(
+    comMarkdown.replace(/<br\s*\/?>/gi, "\n")
+  );
+  const partes = normalizado.split(
+    /(<(?:strong|b)>\s*<(?:em|i)>[\s\S]*?<\/(?:em|i)>\s*<\/(?:strong|b)>|<(?:strong|b|em|i)>[\s\S]*?<\/(?:strong|b|em|i)>)/gi
+  );
 
   return (
     <Text style={style}>
       {partes.map((parte, idx) => {
+        if (!parte) return null;
+        if (/^<(?:strong|b)>\s*<(?:em|i)>/i.test(parte)) {
+          const conteudo = parte.replace(
+            /^<(?:strong|b)>\s*<(?:em|i)>|<\/(?:em|i)>\s*<\/(?:strong|b)>$/gi,
+            ""
+          );
+          return (
+            <Text key={idx} style={[boldStyle, italicStyle]}>
+              {limparTagsInline(conteudo)}
+            </Text>
+          );
+        }
         if (/^<(?:strong|b)>/i.test(parte)) {
           const conteudo = parte.replace(/^<(?:strong|b)>|<\/(?:strong|b)>$/gi, "");
           return (
@@ -120,7 +205,7 @@ function TextoFormatadoInline({
 }
 
 /**
- * Converte a resposta da IA (texto puro ou HTML estruturado do AgentService)
+ * Converte a resposta da IA (texto puro, Markdown ou HTML estruturado do AgentService)
  * em blocos nativos do React Native.
  */
 function ConteudoMensagemIA({
@@ -132,12 +217,21 @@ function ConteudoMensagemIA({
   styles: ReturnType<typeof getStyles>;
   erro?: boolean;
 }) {
-  const temHtml = /<\/?[a-z][a-z0-9]*[^>]*>/i.test(texto);
-
-  if (!temHtml || erro) {
+  if (erro) {
     return (
-      <Text style={[styles.msgIaTexto, erro && styles.msgErroTexto]}>
-        {decodificarEntidades(texto)}
+      <Text style={[styles.msgIaTexto, styles.msgErroTexto]}>
+        {limparTagsInline(texto)}
+      </Text>
+    );
+  }
+
+  const textoNormalizado = normalizarMarkdownParaHtml(texto);
+  const temHtml = /<\/?[a-z][a-z0-9]*[^>]*>/i.test(textoNormalizado);
+
+  if (!temHtml) {
+    return (
+      <Text style={styles.msgIaTexto}>
+        {decodificarEntidades(textoNormalizado)}
       </Text>
     );
   }
@@ -148,9 +242,9 @@ function ConteudoMensagemIA({
   let ultimoIndice = 0;
   let match: RegExpExecArray | null;
 
-  while ((match = blocosRegex.exec(texto)) !== null) {
+  while ((match = blocosRegex.exec(textoNormalizado)) !== null) {
     if (match.index > ultimoIndice) {
-      const solto = texto.slice(ultimoIndice, match.index).trim();
+      const solto = textoNormalizado.slice(ultimoIndice, match.index).trim();
       if (solto) {
         blocos.push({ tipo: "p", conteudo: solto });
       }
@@ -159,8 +253,8 @@ function ConteudoMensagemIA({
     ultimoIndice = blocosRegex.lastIndex;
   }
 
-  if (ultimoIndice < texto.length) {
-    const restante = texto.slice(ultimoIndice).trim();
+  if (ultimoIndice < textoNormalizado.length) {
+    const restante = textoNormalizado.slice(ultimoIndice).trim();
     if (restante) {
       blocos.push({ tipo: "p", conteudo: restante });
     }
@@ -169,7 +263,7 @@ function ConteudoMensagemIA({
   if (blocos.length === 0) {
     return (
       <TextoFormatadoInline
-        html={texto}
+        html={textoNormalizado}
         style={styles.msgIaTexto}
         boldStyle={styles.msgIaBold}
         italicStyle={styles.msgIaItalic}
@@ -182,9 +276,13 @@ function ConteudoMensagemIA({
       {blocos.map((bloco, idx) => {
         if (bloco.tipo === "h3" || bloco.tipo === "h4") {
           return (
-            <Text key={idx} style={styles.htmlHeading}>
-              {limparTagsInline(bloco.conteudo)}
-            </Text>
+            <TextoFormatadoInline
+              key={idx}
+              html={bloco.conteudo}
+              style={styles.htmlHeading}
+              boldStyle={styles.htmlHeading}
+              italicStyle={styles.msgIaItalic}
+            />
           );
         }
 
@@ -281,7 +379,7 @@ function ListaPassosView({
   styles: ReturnType<typeof getStyles>;
   colors: ThemeColors;
 }) {
-  return (
+  const conteudo = (
     <View style={styles.passosLista}>
       {passos.map((p, i) => {
         const emAndamento = p.status === "EM_ANDAMENTO";
@@ -304,13 +402,27 @@ function ListaPassosView({
                 falhou && { color: colors.danger },
               ]}
             >
-              {p.texto}
+              {limparTagsInline(p.texto)}
             </Text>
           </View>
         );
       })}
     </View>
   );
+
+  if (passos.length > 5) {
+    return (
+      <ScrollView
+        style={styles.passosScroll}
+        nestedScrollEnabled
+        showsVerticalScrollIndicator={true}
+      >
+        {conteudo}
+      </ScrollView>
+    );
+  }
+
+  return conteudo;
 }
 
 function formatarDuracao(segundos: number): string {
@@ -1090,11 +1202,14 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
 
     blocoIa: {
       alignSelf: "flex-start",
-      maxWidth: "90%",
+      width: "92%",
+      maxWidth: "92%",
       gap: 6,
     },
 
     balaoIa: {
+      alignSelf: "flex-start",
+      maxWidth: "100%",
       backgroundColor: colors.surfaceSubtle,
       borderWidth: 1,
       borderColor: colors.borderSubtle,
@@ -1110,6 +1225,9 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
     },
 
     balaoIaCarregando: {
+      width: "100%",
+      maxWidth: "100%",
+      overflow: "hidden",
       backgroundColor: colors.surfaceSubtle,
       borderWidth: 1,
       borderColor: colors.borderSubtle,
@@ -1127,7 +1245,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
     },
 
     msgIaBold: {
-      fontWeight: "700",
+      fontWeight: "800",
       color: colors.text,
     },
 
@@ -1204,12 +1322,15 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
     },
 
     resumoPassosBox: {
+      width: "100%",
+      maxWidth: "100%",
+      overflow: "hidden",
       backgroundColor: colors.surfaceCard,
       borderWidth: 1,
       borderColor: colors.borderSubtle,
       borderRadius: 12,
-      paddingHorizontal: 11,
-      paddingVertical: 7,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
     },
 
     resumoPassosHeader: {
@@ -1219,32 +1340,45 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
     },
 
     resumoPassosTitulo: {
+      flex: 1,
       fontSize: 12,
       fontWeight: "700",
       color: colors.primary,
     },
 
+    passosScroll: {
+      maxHeight: 190,
+      width: "100%",
+    },
+
     passosLista: {
-      gap: 6,
+      width: "100%",
+      gap: 7,
       marginTop: 6,
+      paddingRight: 2,
     },
 
     passoItem: {
+      width: "100%",
       flexDirection: "row",
-      alignItems: "center",
+      alignItems: "flex-start",
       gap: 8,
     },
 
     passoIconeWrap: {
-      width: 16,
-      height: 16,
+      width: 18,
+      height: 18,
+      marginTop: 1,
+      flexShrink: 0,
       alignItems: "center",
       justifyContent: "center",
     },
 
     passoTexto: {
       flex: 1,
+      flexShrink: 1,
       fontSize: 12.5,
+      lineHeight: 18,
       color: colors.textSecondary,
     },
 
@@ -1254,12 +1388,15 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
     },
 
     loadingRow: {
+      width: "100%",
       flexDirection: "row",
       alignItems: "center",
       gap: 10,
     },
 
     loadingTexto: {
+      flex: 1,
+      flexShrink: 1,
       fontSize: 13,
       color: colors.textSecondary,
       fontWeight: "600",
