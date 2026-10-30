@@ -1,11 +1,16 @@
 import { Redirect, Tabs } from "expo-router";
 
-import { View, ActivityIndicator, Image, Easing } from "react-native";
+import { View, ActivityIndicator, Easing } from "react-native";
 
 import { Feather } from "@expo/vector-icons";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
+
+const hiddenTabOptions = {
+  tabBarItemStyle: { display: "none" as const },
+  tabBarButton: () => null,
+};
 
 // Fluxo de Secretaria/Administrador (tabs principais + telas internas ocultas).
 
@@ -101,30 +106,30 @@ export default function SecretaryLayout() {
 
       {/* Telas internas fora da tab bar */}
 
-      <Tabs.Screen name="perfil" options={{ href: null }} />
+      <Tabs.Screen name="perfil" options={hiddenTabOptions} />
 
-      <Tabs.Screen name="colaboradores" options={{ href: null }} />
+      <Tabs.Screen name="colaboradores" options={hiddenTabOptions} />
 
-      <Tabs.Screen name="professor" options={{ href: null }} />
+      <Tabs.Screen name="professor" options={hiddenTabOptions} />
 
-      <Tabs.Screen name="secretaria" options={{ href: null }} />
+      <Tabs.Screen name="secretaria" options={hiddenTabOptions} />
 
-      <Tabs.Screen name="studio" options={{ href: null }} />
+      <Tabs.Screen name="studio" options={hiddenTabOptions} />
 
-      <Tabs.Screen name="aluno/cadastrar" options={{ href: null }} />
+      <Tabs.Screen name="aluno/cadastrar" options={hiddenTabOptions} />
 
-      <Tabs.Screen name="aluno/editar/[id]" options={{ href: null }} />
+      <Tabs.Screen name="aluno/editar/[id]" options={hiddenTabOptions} />
 
       <Tabs.Screen
         name="colaborador/cadastrar/[role]"
-        options={{ href: null }}
+        options={hiddenTabOptions}
       />
 
-      <Tabs.Screen name="agendamento/index" options={{ href: null }} />
+      <Tabs.Screen name="agendamento/index" options={hiddenTabOptions} />
 
-      <Tabs.Screen name="agendamento/criar" options={{ href: null }} />
+      <Tabs.Screen name="agendamento/criar" options={hiddenTabOptions} />
 
-      <Tabs.Screen name="perfilView/[tipo]/[id]" options={{ href: null }} />
+      <Tabs.Screen name="perfilView/[tipo]/[id]" options={hiddenTabOptions} />
     </Tabs>
   );
 }
