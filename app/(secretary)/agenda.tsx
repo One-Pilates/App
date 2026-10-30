@@ -6,6 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -449,7 +450,11 @@ export default function AgendaSecretariaScreen() {
           activeOpacity={0.85}
           accessibilityLabel="OneIA - Assistente de Inteligência Artificial"
         >
-          <Text style={styles.fabIaEmoji}>✨</Text>
+          <Image
+            source={require("../../assets/logo_staroneia.png")}
+            style={styles.fabIaIcon}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -737,8 +742,9 @@ const getStyles = (colors: ThemeColors) =>
       elevation: 6,
     },
 
-    fabIaEmoji: {
-      fontSize: 22,
+    fabIaIcon: {
+      width: 28,
+      height: 28,
     },
 
     fab: {
