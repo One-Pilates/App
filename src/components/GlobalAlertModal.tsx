@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -14,10 +14,14 @@ import {
   setAlertListener,
   dismissAlert,
 } from "@/utils/alertManager";
+import { useTheme, ThemeColors } from "@/contexts/ThemeContext";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export default function GlobalAlertModal() {
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+
   const [alertData, setAlertData] = useState<CustomAlertData>({
     visible: false,
     title: "",
@@ -53,30 +57,30 @@ export default function GlobalAlertModal() {
       case "warning":
         return {
           icon: "alert-circle" as const,
-          color: "#f77433",
-          bg: "#fff7ed",
-          border: "#fed7aa",
+          color: colors.primary,
+          bg: isDark ? "rgba(234, 96, 30, 0.18)" : "#fff7ed",
+          border: isDark ? "rgba(234, 96, 30, 0.35)" : "#fed7aa",
         };
       case "error":
         return {
           icon: "alert-octagon" as const,
-          color: "#ef4444",
-          bg: "#fef2f2",
-          border: "#fecaca",
+          color: colors.danger,
+          bg: isDark ? colors.dangerBg : "#fef2f2",
+          border: isDark ? colors.dangerBorder : "#fecaca",
         };
       case "success":
         return {
           icon: "check-circle" as const,
-          color: "#16a34a",
-          bg: "#f0fdf4",
-          border: "#bbf7d0",
+          color: isDark ? "#22c55e" : "#16a34a",
+          bg: isDark ? "rgba(34, 197, 94, 0.18)" : "#f0fdf4",
+          border: isDark ? "rgba(34, 197, 94, 0.35)" : "#bbf7d0",
         };
       default:
         return {
           icon: "info" as const,
-          color: "#f77433",
-          bg: "#fff7ed",
-          border: "#fed7aa",
+          color: colors.primary,
+          bg: isDark ? "rgba(234, 96, 30, 0.18)" : "#fff7ed",
+          border: isDark ? "rgba(234, 96, 30, 0.35)" : "#fed7aa",
         };
     }
   };
@@ -167,114 +171,115 @@ export default function GlobalAlertModal() {
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(15, 23, 42, 0.62)",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 24,
-    zIndex: 9999,
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFill,
-  },
-  card: {
-    width: "100%",
-    maxWidth: Math.min(SCREEN_WIDTH - 48, 380),
-    backgroundColor: "#ffffff",
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: "#f1f5f9",
-    paddingHorizontal: 22,
-    paddingTop: 24,
-    paddingBottom: 20,
-    alignItems: "center",
-    shadowColor: "#0f172a",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.16,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  iconBadge: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    borderWidth: 1.5,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 14,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#0f172a",
-    textAlign: "center",
-    marginBottom: 8,
-    letterSpacing: -0.2,
-  },
-  message: {
-    fontSize: 14,
-    color: "#475569",
-    textAlign: "center",
-    lineHeight: 21,
-    marginBottom: 20,
-    paddingHorizontal: 6,
-  },
-  actionsContainer: {
-    width: "100%",
-  },
-  buttonsRow: {
-    flexDirection: "row",
-    gap: 10,
-    width: "100%",
-  },
-  actionButton: {
-    flex: 1,
-    height: 46,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 12,
-  },
-  primaryButton: {
-    backgroundColor: "#f77433",
-  },
-  cancelButton: {
-    backgroundColor: "#f1f5f9",
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-  },
-  destructiveButton: {
-    backgroundColor: "#ef4444",
-  },
-  actionButtonText: {
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  cancelButtonText: {
-    color: "#475569",
-  },
-  whiteButtonText: {
-    color: "#ffffff",
-  },
-  singleConfirmButton: {
-    width: "100%",
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: "#f77433",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#f77433",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.28,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  singleConfirmText: {
-    color: "#ffffff",
-    fontSize: 15,
-    fontWeight: "700",
-    letterSpacing: 0.2,
-  },
-});
+const getStyles = (colors: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: isDark ? "rgba(0, 0, 0, 0.78)" : "rgba(15, 23, 42, 0.62)",
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: 24,
+      zIndex: 9999,
+    },
+    backdrop: {
+      ...StyleSheet.absoluteFill,
+    },
+    card: {
+      width: "100%",
+      maxWidth: Math.min(SCREEN_WIDTH - 48, 380),
+      backgroundColor: colors.surfaceCard,
+      borderRadius: 22,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 22,
+      paddingTop: 24,
+      paddingBottom: 20,
+      alignItems: "center",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: isDark ? 0.35 : 0.16,
+      shadowRadius: 20,
+      elevation: 10,
+    },
+    iconBadge: {
+      width: 54,
+      height: 54,
+      borderRadius: 27,
+      borderWidth: 1.5,
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: 14,
+    },
+    title: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: colors.text,
+      textAlign: "center",
+      marginBottom: 8,
+      letterSpacing: -0.2,
+    },
+    message: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: "center",
+      lineHeight: 21,
+      marginBottom: 20,
+      paddingHorizontal: 6,
+    },
+    actionsContainer: {
+      width: "100%",
+    },
+    buttonsRow: {
+      flexDirection: "row",
+      gap: 10,
+      width: "100%",
+    },
+    actionButton: {
+      flex: 1,
+      height: 46,
+      borderRadius: 12,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: 12,
+    },
+    primaryButton: {
+      backgroundColor: colors.primary,
+    },
+    cancelButton: {
+      backgroundColor: colors.surfaceSubtle,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+    },
+    destructiveButton: {
+      backgroundColor: colors.danger,
+    },
+    actionButtonText: {
+      fontSize: 14,
+      fontWeight: "700",
+    },
+    cancelButtonText: {
+      color: colors.textSecondary,
+    },
+    whiteButtonText: {
+      color: "#ffffff",
+    },
+    singleConfirmButton: {
+      width: "100%",
+      height: 48,
+      borderRadius: 12,
+      backgroundColor: colors.primary,
+      justifyContent: "center",
+      alignItems: "center",
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.28,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+    singleConfirmText: {
+      color: "#ffffff",
+      fontSize: 15,
+      fontWeight: "700",
+      letterSpacing: 0.2,
+    },
+  });

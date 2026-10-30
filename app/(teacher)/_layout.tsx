@@ -48,15 +48,15 @@ export default function TeacherLayout() {
     >
       <Tabs.Screen
         name="dashboard"
-        options={{ title: 'Início', tabBarIcon: ({ color, size }) => <Feather name="pie-chart" size={size} color={color} /> }}
+        options={{ title: 'Início', tabBarIcon: ({ color, size }) => <Feather name="pie-chart" size={size} color={String(color)} /> }}
       />
       <Tabs.Screen
         name="agenda"
-        options={{ title: 'Agenda', tabBarIcon: ({ color, size }) => <Feather name="calendar" size={size} color={color} /> }}
+        options={{ title: 'Agenda', tabBarIcon: ({ color, size }) => <Feather name="calendar" size={size} color={String(color)} /> }}
       />
       <Tabs.Screen
         name="perfil"
-        options={{ title: 'Perfil', tabBarIcon: ({ color, size }) => <Feather name="user" size={size} color={color} /> }}
+        options={{ title: 'Perfil', tabBarIcon: ({ color, size }) => <Feather name="user" size={size} color={String(color)} /> }}
       />
     </Tabs>
   );

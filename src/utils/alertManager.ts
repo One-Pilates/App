@@ -88,7 +88,7 @@ export function setupGlobalAlertInterceptor() {
         type,
         buttons: buttons?.map((b) => ({
           text: b.text,
-          onPress: b.onPress,
+          onPress: b.onPress ? () => b.onPress?.() : undefined,
           style: b.style,
         })),
       });

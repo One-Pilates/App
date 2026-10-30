@@ -28,7 +28,7 @@ export default function CodigoVerificacao() {
   const [codigo, setCodigo] = useState(["", "", "", "", ""]);
   const [confirming, setConfirming] = useState(false);
   const [resending, setResending] = useState(false);
-  const inputs = useRef<(TextInput | null)[]>([]);
+  const inputs = useRef<(React.ComponentRef<typeof TextInput> | null)[]>([]);
 
   const handleChange = (index: number, value: string) => {
     if (!/^[A-Za-z0-9]?$/.test(value)) return;

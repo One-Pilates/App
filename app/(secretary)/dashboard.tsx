@@ -37,14 +37,27 @@ const PALETTE = ['#FF6B35', '#FF8C42', '#FFA94D', '#FFB74D', '#f97316', '#fb923c
 const EMPTY_KPIS: Kpis = { sessoes: '', alunos: '', diaMaior: '', professorMaior: '' };
 const ERROR_KPIS: Kpis = { sessoes: '-', alunos: '-', diaMaior: '-', professorMaior: '-' };
 
-/* ------------------------------------------------------------------ */
-/* Tela                                                                */
-
 export default function DashboardScreen() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
-  const styles = useMemo(() => getStyles(colors), [colors]);
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+
+  const primeiroNome = user?.nome ? user.nome.split(' ')[0] : 'Bem-vindo';
+
+  const dataExtensa = useMemo(() => {
+    try {
+      const data = new Date();
+      const formatada = data.toLocaleDateString('pt-BR', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+      });
+      return formatada.charAt(0).toUpperCase() + formatada.slice(1);
+    } catch {
+      return 'Visão Geral';
+    }
+  }, []);
 
   const [period, setPeriod] = useState(30);
   const [kpis, setKpis] = useState<Kpis>(EMPTY_KPIS);
@@ -99,16 +112,35 @@ export default function DashboardScreen() {
   };
 
   const cards = [
-    { label: 'Sessões Realizadas', value: kpis.sessoes, icon: 'activity', bg: '#a855f7' },
-    { label: 'Alunos Atendidos', value: kpis.alunos, icon: 'users', bg: '#f97316' },
-    { label: 'Dia c/ Maior Atendimento', value: kpis.diaMaior, icon: 'calendar', bg: '#3b82f6' },
+    {
+      label: 'Sessões Realizadas',
+      value: kpis.sessoes,
+      icon: 'activity' as const,
+      color: '#a855f7',
+      bg: isDark ? 'rgba(168, 85, 247, 0.2)' : '#faf5ff',
+    },
+    {
+      label: 'Alunos Atendidos',
+      value: kpis.alunos,
+      icon: 'users' as const,
+      color: '#f97316',
+      bg: isDark ? 'rgba(249, 115, 22, 0.2)' : '#fff7ed',
+    },
+    {
+      label: 'Dia c/ Maior Atendimento',
+      value: kpis.diaMaior,
+      icon: 'calendar' as const,
+      color: '#3b82f6',
+      bg: isDark ? 'rgba(59, 130, 246, 0.2)' : '#eff6ff',
+    },
     {
       label: 'Professor c/ mais atendimentos',
       value: kpis.professorMaior,
-      icon: 'award',
-      bg: '#eab308',
+      icon: 'award' as const,
+      color: '#eab308',
+      bg: isDark ? 'rgba(234, 179, 8, 0.2)' : '#fefce8',
     },
-  ] as const;
+  ];
 
   const periodText = `últimos ${period} dias`;
 
@@ -129,7 +161,15 @@ export default function DashboardScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchDashboardData} />}
       >
-        <Text style={styles.pageTitle}>Visão Geral</Text>
+        {/* Saudação e Data */}
+        <View style={styles.greetingHeader}>
+          <Text style={styles.dateText}>{dataExtensa}</Text>
+          <Text style={styles.greetingTitle}>Olá, {primeiroNome}</Text>
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Métricas do Período</Text>
+        </View>
 
         {/* Filtro de período */}
         <View style={styles.filterRow}>
@@ -176,7 +216,7 @@ export default function DashboardScreen() {
             <View key={c.label} style={styles.kpiCard}>
               <View style={styles.kpiHeader}>
                 <View style={[styles.iconWrapper, { backgroundColor: c.bg }]}>
-                  <Feather name={c.icon} size={18} color="#fff" />
+                  <Feather name={c.icon} size={18} color={c.color} />
                 </View>
                 {loading ? (
                   <ActivityIndicator size="small" color={colors.text} />
@@ -195,14 +235,22 @@ export default function DashboardScreen() {
         </View>
 
         {/* Frequência por dia da semana */}
-        <Text style={styles.sectionTitle}>Frequência por Dia da Semana</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Frequência por Dia da Semana</Text>
+          <Text style={styles.sectionSubtitle}>Distribuição de sessões de segunda a sexta</Text>
+        </View>
         <View style={styles.chartCard}>
           <WeeklyBarChart data={chartData} height={190} />
-          <Text style={styles.chartSubtitle}>Agendamentos ({periodText})</Text>
+          <View style={styles.chartFooter}>
+            <Feather name="bar-chart-2" size={14} color={colors.textMuted} />
+            <Text style={styles.chartSubtitle}>Agendamentos ({periodText})</Text>
+          </View>
         </View>
 
         {/* Porcentagem de aulas por professor */}
-        <Text style={styles.sectionTitle}>Porcentagem de aulas por professor</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Porcentagem de aulas por professor</Text>
+        </View>
         <View style={[styles.chartCard, { alignItems: 'stretch' }]}>
           {pie.length === 0 ? (
             <Text style={styles.chartSubtitle}>Sem dados para exibir.</Text>
@@ -242,11 +290,7 @@ export default function DashboardScreen() {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Estilos                                                             */
-/* ------------------------------------------------------------------ */
-
-const getStyles = (colors: ThemeColors) =>
+const getStyles = (colors: ThemeColors, isDark: boolean) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     topBarHeader: {
@@ -260,8 +304,44 @@ const getStyles = (colors: ThemeColors) =>
     },
     brandLogo: { width: 130, height: 32 },
     scroll: { flex: 1 },
-    content: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 40 },
-    pageTitle: { fontSize: 20, fontWeight: '800', color: colors.text, marginBottom: 14 },
+    content: {
+      paddingHorizontal: 16,
+      paddingTop: 18,
+      paddingBottom: 40,
+    },
+    greetingHeader: {
+      marginBottom: 16,
+    },
+    dateText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.primary,
+      textTransform: 'capitalize',
+      marginBottom: 4,
+      letterSpacing: 0.3,
+    },
+    greetingTitle: {
+      fontSize: 24,
+      fontWeight: '800',
+      color: colors.text,
+      letterSpacing: -0.5,
+      marginBottom: 4,
+    },
+    sectionHeader: {
+      marginBottom: 12,
+      marginTop: 4,
+    },
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: '800',
+      color: colors.text,
+      letterSpacing: -0.2,
+    },
+    sectionSubtitle: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
 
     // Filtro
     filterRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
@@ -273,11 +353,11 @@ const getStyles = (colors: ThemeColors) =>
       borderWidth: 1,
       borderColor: colors.border,
     },
-    chipActive: { backgroundColor: '#FF6B35', borderColor: '#FF6B35' },
+    chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
     chipText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
     chipTextActive: { color: '#fff' },
 
-    // Sem dados
+    // Sem dados / Erro
     noData: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -313,12 +393,12 @@ const getStyles = (colors: ThemeColors) =>
     kpiCard: {
       backgroundColor: colors.surfaceCard,
       width: '48%',
-      padding: 14,
-      borderRadius: 14,
+      padding: 15,
+      borderRadius: 16,
       marginBottom: 12,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
+      shadowOpacity: isDark ? 0.2 : 0.05,
       shadowRadius: 6,
       elevation: 2,
       borderWidth: 1,
@@ -326,40 +406,38 @@ const getStyles = (colors: ThemeColors) =>
     },
     kpiHeader: { flexDirection: 'column', alignItems: 'flex-start', marginBottom: 8 },
     iconWrapper: {
-      width: 40,
-      height: 40,
-      borderRadius: 12,
+      width: 38,
+      height: 38,
+      borderRadius: 11,
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: 12,
+      marginBottom: 10,
     },
     kpiValue: { fontSize: 26, fontWeight: '800', color: colors.text },
     kpiValueText: { fontSize: 16, lineHeight: 20 },
-    kpiLabel: { fontSize: 13, color: colors.textSecondary, fontWeight: '500' },
+    kpiLabel: { fontSize: 12.5, color: colors.textSecondary, fontWeight: '600' },
 
-    // Seções e gráficos
-    sectionTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: colors.text,
-      marginBottom: 16,
-      marginTop: 8,
-    },
     chartCard: {
       backgroundColor: colors.surfaceCard,
       borderRadius: 16,
-      padding: 24,
+      padding: 20,
       alignItems: 'center',
-      marginBottom: 16,
+      marginBottom: 20,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
+      shadowOpacity: isDark ? 0.2 : 0.05,
       shadowRadius: 8,
       elevation: 2,
       borderWidth: 1,
       borderColor: colors.border,
     },
-    chartSubtitle: { color: colors.textMuted, fontSize: 12, fontWeight: '600', marginTop: 8 },
+    chartFooter: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginTop: 10,
+    },
+    chartSubtitle: { color: colors.textMuted, fontSize: 12, fontWeight: '600' },
 
     // Professores
     profRow: { marginBottom: 14 },

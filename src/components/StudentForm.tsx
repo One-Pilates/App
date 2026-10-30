@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 import {
   View,
@@ -18,6 +18,8 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { useTheme, ThemeColors } from "@/contexts/ThemeContext";
+import StepIndicator from "@/components/form/StepIndicator";
 
 import DateTimePicker from "@react-native-community/datetimepicker";
 
@@ -129,6 +131,8 @@ function formatarDataBr(iso?: string): string {
 export default function StudentForm({ alunoId }: { alunoId?: string }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
   const isEditMode = !!alunoId;
 
   const [etapaAtual, setEtapaAtual] = useState(1);
@@ -552,7 +556,7 @@ export default function StudentForm({ alunoId }: { alunoId?: string }) {
       <View style={[styles.header, { paddingTop: insets.top > 0 ? insets.top + 6 : 14 }]}>
         <View style={styles.headerTop}>
           <TouchableOpacity style={styles.backButton} onPress={sair}>
-            <Feather name="arrow-left" size={22} color="#0f172a" />
+            <Feather name="arrow-left" size={22} color={colors.text} />
           </TouchableOpacity>
 
           <Text style={styles.title}>
@@ -566,7 +570,11 @@ export default function StudentForm({ alunoId }: { alunoId?: string }) {
           </View>
         </View>
 
-        <StepIndicator currentStep={etapaAtual} onStepClick={irParaEtapa} />
+        <StepIndicator
+          etapas={ETAPAS}
+          etapaAtual={etapaAtual}
+          onIrParaEtapa={irParaEtapa}
+        />
       </View>
 
       <ScrollView
@@ -777,7 +785,7 @@ export default function StudentForm({ alunoId }: { alunoId?: string }) {
                 <Feather
                   name="flag"
                   size={18}
-                  color="#94a3b8"
+                  color={colors.textMuted}
                   style={styles.inputIcon}
                 />
 
@@ -787,7 +795,7 @@ export default function StudentForm({ alunoId }: { alunoId?: string }) {
                   {endereco.uf || "Selecione"}
                 </Text>
 
-                <Feather name="chevron-down" size={18} color="#94a3b8" />
+                <Feather name="chevron-down" size={18} color={colors.textMuted} />
               </TouchableOpacity>
 
               {erros.uf ? (
@@ -811,7 +819,7 @@ export default function StudentForm({ alunoId }: { alunoId?: string }) {
                 onValueChange={(v) =>
                   atualizarInformacoes({ problemasMobilidade: v })
                 }
-                trackColor={{ false: "#cbd5e1", true: "#f77433" }}
+                trackColor={{ false: isDark ? "#334155" : "#cbd5e1", true: "#f77433" }}
                 thumbColor="#fff"
               />
             </View>
@@ -826,7 +834,7 @@ export default function StudentForm({ alunoId }: { alunoId?: string }) {
                 onValueChange={(v) =>
                   atualizarInformacoes({ notificacaoAtiva: v })
                 }
-                trackColor={{ false: "#cbd5e1", true: "#f77433" }}
+                trackColor={{ false: isDark ? "#334155" : "#cbd5e1", true: "#f77433" }}
                 thumbColor="#fff"
               />
             </View>
@@ -839,7 +847,7 @@ export default function StudentForm({ alunoId }: { alunoId?: string }) {
                 value={informacoesAluno.observacao}
                 onChangeText={(v) => atualizarInformacoes({ observacao: v })}
                 placeholder="Digite observações sobre o aluno..."
-                placeholderTextColor="#94a3b8"
+                placeholderTextColor={colors.textMuted}
                 multiline
                 numberOfLines={6}
                 textAlignVertical="top"
@@ -917,7 +925,7 @@ export default function StudentForm({ alunoId }: { alunoId?: string }) {
               onPress={etapaAnterior}
               disabled={carregando}
             >
-              <Feather name="arrow-left" size={16} color="#475569" />
+              <Feather name="arrow-left" size={16} color={colors.textSecondary} />
 
               <Text style={styles.btnBackText}>Voltar</Text>
             </TouchableOpacity>
@@ -1010,85 +1018,20 @@ export default function StudentForm({ alunoId }: { alunoId?: string }) {
 
 // --- Subcomponentes ---
 
-function StepIndicator({
-  currentStep,
-
-  onStepClick,
-}: {
-  currentStep: number;
-
-  onStepClick: (n: number) => void;
-}) {
-  return (
-    <View style={styles.stepper}>
-      {ETAPAS.map((step, index) => {
-        const stepNumber = index + 1;
-
-        const isActive = stepNumber === currentStep;
-
-        const isCompleted = stepNumber < currentStep;
-
-        const isClickable = stepNumber <= currentStep;
-
-        return (
-          <View key={step.label} style={styles.stepWrapper}>
-            <TouchableOpacity
-              style={[
-                styles.stepCircle,
-
-                isActive && styles.stepCircleActive,
-
-                isCompleted && styles.stepCircleCompleted,
-              ]}
-              onPress={() => isClickable && onStepClick(stepNumber)}
-              disabled={!isClickable}
-            >
-              {isCompleted ? (
-                <Feather name="check" size={14} color="#fff" />
-              ) : (
-                <Text
-                  style={[
-                    styles.stepNumber,
-                    isActive && styles.stepNumberActive,
-                  ]}
-                >
-                  {stepNumber}
-                </Text>
-              )}
-            </TouchableOpacity>
-
-            {stepNumber < ETAPAS.length && (
-              <View
-                style={[
-                  styles.stepLine,
-                  isCompleted && styles.stepLineCompleted,
-                ]}
-              />
-            )}
-          </View>
-        );
-      })}
-    </View>
-  );
-}
-
 function EtapaCard({
   icone,
-
   titulo,
-
   subtitulo,
-
   children,
 }: {
   icone: keyof typeof Feather.glyphMap;
-
   titulo: string;
-
   subtitulo: string;
-
   children: React.ReactNode;
 }) {
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+
   return (
     <View style={styles.card}>
       <View style={styles.etapaHeader}>
@@ -1098,7 +1041,6 @@ function EtapaCard({
 
         <View style={styles.etapaTitleGroup}>
           <Text style={styles.etapaTitle}>{titulo}</Text>
-
           <Text style={styles.etapaSubtitle}>{subtitulo}</Text>
         </View>
       </View>
@@ -1110,32 +1052,25 @@ function EtapaCard({
 
 function Campo({
   label,
-
   obrigatorio,
-
   erro,
-
   icone,
-
   editable = true,
-
   ...inputProps
 }: {
   label: string;
-
   obrigatorio?: boolean;
-
   erro?: string;
-
   icone: keyof typeof Feather.glyphMap;
-
   editable?: boolean;
 } & React.ComponentProps<typeof TextInput>) {
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+
   return (
     <View style={styles.inputGroup}>
       <Text style={styles.label}>
         {label}
-
         {obrigatorio ? <Text style={styles.required}> *</Text> : null}
       </Text>
 
@@ -1149,13 +1084,13 @@ function Campo({
         <Feather
           name={icone}
           size={18}
-          color="#94a3b8"
+          color={colors.textMuted}
           style={styles.inputIcon}
         />
 
         <TextInput
           style={styles.input}
-          placeholderTextColor="#94a3b8"
+          placeholderTextColor={colors.textMuted}
           editable={editable}
           {...inputProps}
         />
@@ -1173,426 +1108,279 @@ function SecaoRevisao({
   titulo: string;
   children: React.ReactNode;
 }) {
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+
   return (
     <View style={styles.secaoRevisao}>
       <Text style={styles.secaoTitulo}>{titulo}</Text>
-
       {children}
     </View>
   );
 }
 
 function LinhaInfo({ label, valor }: { label: string; valor?: string }) {
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+
   return (
     <View style={styles.linhaInfo}>
       <Text style={styles.linhaLabel}>{label}</Text>
-
       <Text style={styles.linhaValor}>{valor || "---"}</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f8fafc" },
-
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f8fafc",
-  },
-
-  header: {
-    backgroundColor: "#fff",
-
-    paddingHorizontal: 16,
-
-    paddingTop: 16,
-
-    paddingBottom: 12,
-
-    borderBottomWidth: 1,
-
-    borderBottomColor: "#f1f5f9",
-  },
-
-  headerTop: { flexDirection: "row", alignItems: "center", marginBottom: 16 },
-
-  backButton: {
-    width: 40,
-
-    height: 40,
-
-    borderRadius: 12,
-
-    backgroundColor: "#f8fafc",
-
-    justifyContent: "center",
-
-    alignItems: "center",
-  },
-
-  title: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#0f172a",
-    marginLeft: 12,
-  },
-
-  stepBadge: {
-    backgroundColor: "#fff3eb",
-
-    borderRadius: 12,
-
-    paddingHorizontal: 10,
-
-    paddingVertical: 5,
-  },
-
-  stepBadgeText: { fontSize: 12, color: "#f77433", fontWeight: "600" },
-
-  stepper: { flexDirection: "row", alignItems: "center" },
-
-  stepWrapper: { flexDirection: "row", alignItems: "center", flex: 1 },
-
-  stepCircle: {
-    width: 32,
-
-    height: 32,
-
-    borderRadius: 16,
-
-    backgroundColor: "#f1f5f9",
-
-    justifyContent: "center",
-
-    alignItems: "center",
-
-    borderWidth: 2,
-
-    borderColor: "#e2e8f0",
-  },
-
-  stepCircleActive: { backgroundColor: "#fff", borderColor: "#f77433" },
-
-  stepCircleCompleted: { backgroundColor: "#f77433", borderColor: "#f77433" },
-
-  stepNumber: { fontSize: 14, fontWeight: "700", color: "#94a3b8" },
-
-  stepNumberActive: { color: "#f77433" },
-
-  stepLine: {
-    flex: 1,
-    height: 2,
-    backgroundColor: "#e2e8f0",
-    marginHorizontal: 4,
-  },
-
-  stepLineCompleted: { backgroundColor: "#f77433" },
-
-  scroll: { flex: 1 },
-
-  scrollContent: { padding: 16, paddingBottom: 48 },
-
-  card: {
-    backgroundColor: "#fff",
-
-    borderRadius: 16,
-
-    padding: 20,
-
-    marginBottom: 16,
-
-    borderWidth: 1,
-
-    borderColor: "#f1f5f9",
-  },
-
-  etapaHeader: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
-
-  etapaIcon: {
-    width: 40,
-
-    height: 40,
-
-    borderRadius: 12,
-
-    backgroundColor: "#fff3eb",
-
-    justifyContent: "center",
-
-    alignItems: "center",
-
-    marginRight: 12,
-  },
-
-  etapaTitleGroup: { flex: 1 },
-
-  etapaTitle: { fontSize: 18, fontWeight: "bold", color: "#0f172a" },
-
-  etapaSubtitle: { fontSize: 13, color: "#64748b", marginTop: 2 },
-
-  inputGroup: { marginBottom: 16 },
-
-  label: { fontSize: 13, fontWeight: "600", color: "#0f172a", marginBottom: 8 },
-
-  required: { color: "#ef4444" },
-
-  inputContainer: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    backgroundColor: "#f8fafc",
-
-    borderRadius: 12,
-
-    borderWidth: 2,
-
-    borderColor: "#f1f5f9",
-
-    paddingHorizontal: 14,
-  },
-
-  inputDisabled: { backgroundColor: "#f1f5f9" },
-
-  inputError: { borderColor: "#fca5a5" },
-
-  inputIcon: { marginRight: 10 },
-
-  input: { flex: 1, paddingVertical: 12, fontSize: 15, color: "#0f172a" },
-
-  placeholderText: { color: "#94a3b8" },
-
-  errorText: { fontSize: 12, color: "#ef4444", marginTop: 4 },
-
-  checkboxRow: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    marginTop: -6,
-
-    marginBottom: 16,
-
-    gap: 8,
-  },
-
-  checkbox: {
-    width: 22,
-
-    height: 22,
-
-    borderRadius: 6,
-
-    borderWidth: 2,
-
-    borderColor: "#cbd5e1",
-
-    justifyContent: "center",
-
-    alignItems: "center",
-  },
-
-  checkboxChecked: { backgroundColor: "#f77433", borderColor: "#f77433" },
-
-  checkboxLabel: { fontSize: 14, color: "#475569", fontWeight: "500" },
-
-  switchRow: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    justifyContent: "space-between",
-
-    backgroundColor: "#f8fafc",
-
-    borderRadius: 12,
-
-    padding: 16,
-
-    marginBottom: 12,
-  },
-
-  switchLabel: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: "500",
-    color: "#0f172a",
-    paddingRight: 12,
-  },
-
-  textarea: {
-    backgroundColor: "#f8fafc",
-
-    borderRadius: 12,
-
-    borderWidth: 2,
-
-    borderColor: "#f1f5f9",
-
-    padding: 14,
-
-    fontSize: 15,
-
-    color: "#0f172a",
-
-    minHeight: 120,
-  },
-
-  secaoRevisao: { marginBottom: 20 },
-
-  secaoTitulo: {
-    fontSize: 15,
-
-    fontWeight: "bold",
-
-    color: "#f77433",
-
-    marginBottom: 10,
-
-    paddingBottom: 6,
-
-    borderBottomWidth: 1,
-
-    borderBottomColor: "#f1f5f9",
-  },
-
-  linhaInfo: {
-    flexDirection: "row",
-
-    justifyContent: "space-between",
-
-    paddingVertical: 8,
-
-    gap: 12,
-  },
-
-  linhaLabel: { fontSize: 13, color: "#64748b", fontWeight: "500" },
-
-  linhaValor: {
-    fontSize: 14,
-    color: "#0f172a",
-    fontWeight: "600",
-    flex: 1,
-    textAlign: "right",
-  },
-
-  actions: { flexDirection: "row", gap: 12, marginTop: 4 },
-
-  btnBack: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    justifyContent: "center",
-
-    gap: 6,
-
-    backgroundColor: "#e2e8f0",
-
-    borderRadius: 12,
-
-    paddingVertical: 15,
-
-    paddingHorizontal: 20,
-  },
-
-  btnBackText: { color: "#475569", fontSize: 15, fontWeight: "bold" },
-
-  btnNext: {
-    flex: 1,
-
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    justifyContent: "center",
-
-    gap: 6,
-
-    backgroundColor: "#f77433",
-
-    borderRadius: 12,
-
-    paddingVertical: 15,
-  },
-
-  btnFull: { flex: 1 },
-
-  btnNextText: { color: "#fff", fontSize: 15, fontWeight: "bold" },
-
-  btnFinish: {
-    flex: 1,
-
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    justifyContent: "center",
-
-    gap: 8,
-
-    backgroundColor: "#16a34a",
-
-    borderRadius: 12,
-
-    paddingVertical: 15,
-  },
-
-  btnDisabled: { opacity: 0.6 },
-
-  btnFinishText: { color: "#fff", fontSize: 15, fontWeight: "bold" },
-
-  modalOverlay: {
-    flex: 1,
-
-    backgroundColor: "rgba(0,0,0,0.4)",
-
-    justifyContent: "center",
-
-    alignItems: "center",
-
-    padding: 24,
-  },
-
-  modalContent: {
-    backgroundColor: "#fff",
-
-    borderRadius: 16,
-
-    padding: 20,
-
-    width: "100%",
-
-    maxHeight: "70%",
-  },
-
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#0f172a",
-    marginBottom: 16,
-  },
-
-  ufRow: { gap: 8, marginBottom: 8 },
-
-  ufChip: {
-    flex: 1,
-
-    paddingVertical: 12,
-
-    borderRadius: 10,
-
-    backgroundColor: "#f1f5f9",
-
-    alignItems: "center",
-  },
-
-  ufChipSelected: { backgroundColor: "#f77433" },
-
-  ufChipText: { fontSize: 14, fontWeight: "600", color: "#475569" },
-
-  ufChipTextSelected: { color: "#fff" },
-});
+const getStyles = (colors: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    center: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: colors.background,
+    },
+    header: {
+      backgroundColor: colors.surfaceCard,
+      paddingHorizontal: 16,
+      paddingTop: 16,
+      paddingBottom: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderSubtle,
+    },
+    headerTop: { flexDirection: "row", alignItems: "center", marginBottom: 16 },
+    backButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: colors.surfaceSubtle,
+      justifyContent: "center",
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+    },
+    title: {
+      flex: 1,
+      fontSize: 18,
+      fontWeight: "bold",
+      color: colors.text,
+      marginLeft: 12,
+    },
+    stepBadge: {
+      backgroundColor: isDark ? "rgba(247, 116, 51, 0.15)" : "#fff3eb",
+      borderRadius: 12,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+    },
+    stepBadgeText: { fontSize: 12, color: colors.primary, fontWeight: "600" },
+    stepper: { flexDirection: "row", alignItems: "center" },
+    stepWrapper: { flexDirection: "row", alignItems: "center", flex: 1 },
+    stepCircle: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: colors.surfaceSubtle,
+      justifyContent: "center",
+      alignItems: "center",
+      borderWidth: 2,
+      borderColor: colors.borderSubtle,
+    },
+    stepCircleActive: { backgroundColor: colors.surfaceCard, borderColor: colors.primary },
+    stepCircleCompleted: { backgroundColor: colors.primary, borderColor: colors.primary },
+    stepNumber: { fontSize: 14, fontWeight: "700", color: colors.textMuted },
+    stepNumberActive: { color: colors.primary },
+    stepLine: {
+      flex: 1,
+      height: 2,
+      backgroundColor: colors.borderSubtle,
+      marginHorizontal: 4,
+    },
+    stepLineCompleted: { backgroundColor: colors.primary },
+    scroll: { flex: 1 },
+    scrollContent: { padding: 16, paddingBottom: 48 },
+    card: {
+      backgroundColor: colors.surfaceCard,
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.2 : 0.04,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    etapaHeader: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
+    etapaIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: isDark ? "rgba(247, 116, 51, 0.15)" : "#fff3eb",
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 12,
+    },
+    etapaTitleGroup: { flex: 1 },
+    etapaTitle: { fontSize: 18, fontWeight: "bold", color: colors.text },
+    etapaSubtitle: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
+    inputGroup: { marginBottom: 16 },
+    label: { fontSize: 13, fontWeight: "600", color: colors.text, marginBottom: 8 },
+    required: { color: "#ef4444" },
+    inputContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.surfaceSubtle,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      paddingHorizontal: 14,
+    },
+    inputDisabled: { backgroundColor: isDark ? colors.surfaceCard : "#f1f5f9" },
+    inputError: { borderColor: "#ef4444" },
+    inputIcon: { marginRight: 10 },
+    input: { flex: 1, paddingVertical: 12, fontSize: 15, color: colors.text },
+    placeholderText: { color: colors.textMuted },
+    errorText: { fontSize: 12, color: "#ef4444", marginTop: 4 },
+    checkboxRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: -6,
+      marginBottom: 16,
+      gap: 8,
+    },
+    checkbox: {
+      width: 22,
+      height: 22,
+      borderRadius: 6,
+      borderWidth: 2,
+      borderColor: colors.borderSubtle,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    checkboxChecked: { backgroundColor: colors.primary, borderColor: colors.primary },
+    checkboxLabel: { fontSize: 14, color: colors.text, fontWeight: "500" },
+    switchRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: colors.surfaceSubtle,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+    },
+    switchLabel: {
+      flex: 1,
+      fontSize: 15,
+      fontWeight: "500",
+      color: colors.text,
+      paddingRight: 12,
+    },
+    textarea: {
+      backgroundColor: colors.surfaceSubtle,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      padding: 14,
+      fontSize: 15,
+      color: colors.text,
+      minHeight: 120,
+    },
+    secaoRevisao: { marginBottom: 20 },
+    secaoTitulo: {
+      fontSize: 15,
+      fontWeight: "bold",
+      color: colors.primary,
+      marginBottom: 10,
+      paddingBottom: 6,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderSubtle,
+    },
+    linhaInfo: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      paddingVertical: 8,
+      gap: 12,
+    },
+    linhaLabel: { fontSize: 13, color: colors.textMuted, fontWeight: "500" },
+    linhaValor: {
+      fontSize: 14,
+      color: colors.text,
+      fontWeight: "600",
+      flex: 1,
+      textAlign: "right",
+    },
+    actions: { flexDirection: "row", gap: 12, marginTop: 4 },
+    btnBack: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+      backgroundColor: colors.surfaceSubtle,
+      borderRadius: 12,
+      paddingVertical: 15,
+      paddingHorizontal: 20,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+    },
+    btnBackText: { color: colors.text, fontSize: 15, fontWeight: "bold" },
+    btnNext: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+      backgroundColor: colors.primary,
+      borderRadius: 12,
+      paddingVertical: 15,
+    },
+    btnFull: { flex: 1 },
+    btnNextText: { color: "#fff", fontSize: 15, fontWeight: "bold" },
+    btnFinish: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      backgroundColor: "#16a34a",
+      borderRadius: 12,
+      paddingVertical: 15,
+    },
+    btnDisabled: { opacity: 0.6 },
+    btnFinishText: { color: "#fff", fontSize: 15, fontWeight: "bold" },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.6)",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 24,
+    },
+    modalContent: {
+      backgroundColor: colors.surfaceCard,
+      borderRadius: 16,
+      padding: 20,
+      width: "100%",
+      maxHeight: "70%",
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+    },
+    modalTitle: {
+      fontSize: 16,
+      fontWeight: "bold",
+      color: colors.text,
+      marginBottom: 16,
+    },
+    ufRow: { gap: 8, marginBottom: 8 },
+    ufChip: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: 10,
+      backgroundColor: colors.surfaceSubtle,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+    },
+    ufChipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+    ufChipText: { fontSize: 14, fontWeight: "600", color: colors.textSecondary },
+    ufChipTextSelected: { color: "#fff" },
+  });
