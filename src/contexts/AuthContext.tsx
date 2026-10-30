@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
 
     try {
-      console.log("Iniciando login com email e senha:", email, senha);
+      console.log("Iniciando login:", { email });
       const response = await api.post("/auth/login", { email, senha });
       const data = response.data;
 
@@ -139,7 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       console.log("HEADERS:", error.response?.headers);
 
-      return { success: false, message: "Erro ao fazer login simulado." };
+      return { success: false, message: "Erro ao fazer login." };
     } finally {
       setLoading(false);
     }

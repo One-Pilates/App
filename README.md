@@ -35,6 +35,18 @@ npm install
 npx expo start
 ```
 
+O endereço da API é lido do arquivo `.env` por `EXPO_PUBLIC_API_URL`. Depois de
+criar ou alterar essa variável, encerre o processo do Expo e reinicie limpando o
+cache para que o valor entre no bundle web:
+
+```bash
+npx expo start --web --clear
+```
+
+As requisições da API e os resultados dos dashboards aparecem no console do
+navegador com os prefixos `[API]`, `[DASHBOARD][PROFESSOR]` e
+`[DASHBOARD][SECRETARIA]`. O token não é impresso nos logs.
+
 Após iniciar, escaneie o QR Code gerado no terminal usando o aplicativo **Expo Go** (no Android) ou o app da **Câmera** (no iOS) no seu celular.
 
 ## Scripts
