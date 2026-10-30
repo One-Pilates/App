@@ -18,7 +18,6 @@ import {
   RecordingPresets,
   setAudioModeAsync,
 } from "expo-audio";
-import * as DocumentPicker from "expo-document-picker";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme, ThemeColors } from "@/contexts/ThemeContext";
 import {
@@ -333,7 +332,7 @@ export default function AssistenteIASheet({
     () => ({
       id: "welcome",
       role: "ia",
-      text: `Olá${user?.nome ? `, ${user.nome.split(" ")[0]}` : ""}! Sou o Assistente One. Você pode escrever ou enviar um áudio para consultar a agenda, criar ou editar aulas, verificar observações de alunos e acompanhar indicadores do estúdio.`,
+      text: `Olá${user?.nome ? `, ${user.nome.split(" ")[0]}` : ""}! Sou a OneIA. Você pode escrever ou gravar um áudio para consultar a agenda, criar ou editar aulas, verificar observações de alunos e acompanhar indicadores do estúdio.`,
     }),
     [user?.nome]
   );
@@ -685,32 +684,6 @@ export default function AssistenteIASheet({
     }
   };
 
-  const selecionarArquivoAudio = async () => {
-    if (carregando || gravando) return;
-
-    try {
-      const resultado = await DocumentPicker.getDocumentAsync({
-        type: ["audio/*"],
-        copyToCacheDirectory: true,
-      });
-
-      if (resultado.canceled || !resultado.assets?.length) {
-        return;
-      }
-
-      const arquivo = resultado.assets[0];
-      await processarEnvioAudio({
-        uri: arquivo.uri,
-        name: arquivo.name || `audio-${Date.now()}.m4a`,
-        mimeType: arquivo.mimeType || "audio/m4a",
-        file: (arquivo as any).file,
-      });
-    } catch (err) {
-      console.error("Erro ao selecionar arquivo de áudio:", err);
-      notify.error("Não foi possível carregar o arquivo de áudio selecionado.");
-    }
-  };
-
   const mostrarSugestoes = mensagens.length <= 1 && !carregando;
 
   return (
@@ -738,10 +711,10 @@ export default function AssistenteIASheet({
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <View style={styles.iaBadgeIcon}>
-                <Feather name="cpu" size={18} color={colors.primary} />
+                <Text style={styles.iaBadgeEmoji}>✨</Text>
               </View>
               <View style={styles.flex1}>
-                <Text style={styles.titulo}>Assistente One</Text>
+                <Text style={styles.titulo}>OneIA</Text>
                 <Text style={styles.subtitulo}>
                   Inteligência Artificial · Texto e Voz
                 </Text>
@@ -941,27 +914,12 @@ export default function AssistenteIASheet({
                     style={styles.input}
                     value={texto}
                     onChangeText={setTexto}
-                    placeholder="Escreva ou grave um pedido para a IA..."
+                    placeholder="Escreva ou grave um pedido para a OneIA..."
                     placeholderTextColor={colors.inputPlaceholder}
                     multiline
                     maxLength={1500}
                     editable={!carregando}
                   />
-
-                  <TouchableOpacity
-                    style={styles.attachAudioBtn}
-                    onPress={selecionarArquivoAudio}
-                    disabled={carregando}
-                    activeOpacity={0.75}
-                  >
-                    <Feather
-                      name="paperclip"
-                      size={18}
-                      color={
-                        carregando ? colors.textMuted : colors.textSecondary
-                      }
-                    />
-                  </TouchableOpacity>
                 </View>
 
                 <TouchableOpacity
@@ -1056,6 +1014,10 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
         : "rgba(234, 96, 30, 0.2)",
       alignItems: "center",
       justifyContent: "center",
+    },
+
+    iaBadgeEmoji: {
+      fontSize: 18,
     },
 
     flex1: { flex: 1 },
@@ -1362,8 +1324,7 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
       borderWidth: 1.5,
       borderColor: colors.inputBorder,
       borderRadius: 16,
-      paddingLeft: 14,
-      paddingRight: 6,
+      paddingHorizontal: 14,
       paddingVertical: 4,
       minHeight: 46,
       maxHeight: 110,
@@ -1375,14 +1336,6 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
       color: colors.inputText,
       paddingVertical: 6,
       maxHeight: 96,
-    },
-
-    attachAudioBtn: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      alignItems: "center",
-      justifyContent: "center",
     },
 
     actionBtnPrimary: {

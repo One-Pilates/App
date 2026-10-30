@@ -447,9 +447,9 @@ export default function AgendaSecretariaScreen() {
           style={styles.fabIa}
           onPress={() => setIaAberta(true)}
           activeOpacity={0.85}
-          accessibilityLabel="Assistente de Inteligência Artificial"
+          accessibilityLabel="OneIA - Assistente de Inteligência Artificial"
         >
-          <Feather name="cpu" size={20} color={colors.primary} />
+          <Text style={styles.fabIaEmoji}>✨</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -722,19 +722,23 @@ const getStyles = (colors: ThemeColors) =>
     },
 
     fabIa: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
       backgroundColor: colors.surfaceCard,
       borderWidth: 1.5,
       borderColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
       shadowColor: colors.primary,
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.25,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
       shadowRadius: 8,
-      elevation: 5,
+      elevation: 6,
+    },
+
+    fabIaEmoji: {
+      fontSize: 22,
     },
 
     fab: {
