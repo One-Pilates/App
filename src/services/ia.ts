@@ -32,6 +32,23 @@ export interface IASolicitacaoDTO {
   realizacaoId: number;
   status: string;
   textoTranscrito?: string;
+  conversaId?: number;
+}
+
+export interface IAConversaResumoDTO {
+  conversaId: number;
+  titulo: string;
+  criadaEm?: string;
+  ultimoUso?: string;
+  totalMensagens: number;
+}
+
+export interface IAConversaDetalheDTO {
+  conversaId: number;
+  titulo: string;
+  criadaEm?: string;
+  ultimoUso?: string;
+  mensagens: IARealizacaoDTO[];
 }
 
 export interface AudioUploadAsset {
@@ -106,7 +123,6 @@ async function acompanharRealizacao(
   const inicio = Date.now();
   let falhasRede = 0;
   let passosJson = '';
-  let ultimosPassos: PassoIA[] = [];
 
   while (Date.now() - inicio < AGENTE_LIMITE_MS) {
     await esperar(AGENTE_INTERVALO_MS);
@@ -127,7 +143,6 @@ async function acompanharRealizacao(
     }
 
     const passos = extrairPassosIA(andamento);
-    ultimosPassos = passos;
     const json = JSON.stringify(passos);
     if (json !== passosJson) {
       passosJson = json;
@@ -167,18 +182,20 @@ export async function conversarComAgenteTexto({
   usuarioId,
   mensagem,
   novaConversa = false,
+  conversaId,
   onProgresso,
 }: {
   usuarioId: number;
   mensagem: string;
   novaConversa?: boolean;
+  conversaId?: number | null;
   onProgresso?: (passos: PassoIA[]) => void;
-}): Promise<{ resposta: string; passos: PassoIA[] }> {
+}): Promise<{ resposta: string; passos: PassoIA[]; conversaId?: number }> {
   const dataRequisicao = new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
     .toISOString()
     .slice(0, 19);
 
-  let realizacaoId: number | undefined;
+  let solicitacao: IASolicitacaoDTO;
   try {
     const { data } = await api.post<IASolicitacaoDTO>(
       'api/ia/agente',
@@ -187,22 +204,27 @@ export async function conversarComAgenteTexto({
         dataRequisicao,
         mensagem,
         novaConversa,
+        ...(conversaId ? { conversaId } : {}),
       },
       {
         timeout: 30000,
         skipAuthRedirect: true,
       } as any,
     );
-    realizacaoId = data?.realizacaoId;
+    solicitacao = data;
   } catch (err) {
     throw traduzirErroIA(err);
   }
 
-  if (realizacaoId === undefined || realizacaoId === null) {
+  if (solicitacao?.realizacaoId === undefined || solicitacao?.realizacaoId === null) {
     throw new Error('O assistente não retornou o identificador da solicitação.');
   }
 
-  return acompanharRealizacao(realizacaoId, onProgresso);
+  const resultado = await acompanharRealizacao(solicitacao.realizacaoId, onProgresso);
+  return {
+    ...resultado,
+    conversaId: solicitacao.conversaId,
+  };
 }
 
 /**
@@ -213,15 +235,17 @@ export async function conversarComAgenteAudio({
   usuarioId,
   audio,
   novaConversa = false,
+  conversaId,
   onTranscrito,
   onProgresso,
 }: {
   usuarioId: number;
   audio: AudioUploadAsset;
   novaConversa?: boolean;
+  conversaId?: number | null;
   onTranscrito?: (textoTranscrito: string) => void;
   onProgresso?: (passos: PassoIA[]) => void;
-}): Promise<{ resposta: string; textoTranscrito: string; passos: PassoIA[] }> {
+}): Promise<{ resposta: string; textoTranscrito: string; passos: PassoIA[]; conversaId?: number }> {
   const formData = new FormData();
   const nomeArquivo = audio.name || 'gravacao.m4a';
   const tipoMime = audio.mimeType || 'audio/m4a';
@@ -244,6 +268,9 @@ export async function conversarComAgenteAudio({
 
   formData.append('usuarioId', String(usuarioId));
   formData.append('novaConversa', String(Boolean(novaConversa)));
+  if (conversaId) {
+    formData.append('conversaId', String(conversaId));
+  }
 
   let solicitacao: IASolicitacaoDTO;
   try {
@@ -267,6 +294,36 @@ export async function conversarComAgenteAudio({
   onTranscrito?.(textoTranscrito);
 
   const { resposta, passos } = await acompanharRealizacao(solicitacao.realizacaoId, onProgresso);
-  return { resposta, textoTranscrito, passos };
+  return {
+    resposta,
+    textoTranscrito,
+    passos,
+    conversaId: solicitacao.conversaId,
+  };
 }
 
+/** Lista o histórico de conversas do usuário logado no backend. */
+export async function listarConversasIA(): Promise<IAConversaResumoDTO[]> {
+  const { data } = await api.get<IAConversaResumoDTO[]>('api/ia/conversas', {
+    timeout: 15000,
+    skipAuthRedirect: true,
+  } as any);
+  return Array.isArray(data) ? data : [];
+}
+
+/** Obtém os detalhes (mensagens e etapas) de uma conversa específica do histórico. */
+export async function obterConversaIA(conversaId: number): Promise<IAConversaDetalheDTO> {
+  const { data } = await api.get<IAConversaDetalheDTO>(`api/ia/conversas/${conversaId}`, {
+    timeout: 15000,
+    skipAuthRedirect: true,
+  } as any);
+  return data;
+}
+
+/** Exclui uma conversa específica do histórico do usuário no backend. */
+export async function excluirConversaIA(conversaId: number): Promise<void> {
+  await api.delete(`api/ia/conversas/${conversaId}`, {
+    timeout: 15000,
+    skipAuthRedirect: true,
+  } as any);
+}
