@@ -9,8 +9,24 @@ import { WeeklyBarChart } from '@/components/dashboard/WeeklyBarChart';
 export default function DashboardScreen() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
-  const styles = useMemo(() => getStyles(colors), [colors]);
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+
+  const primeiroNome = user?.nome ? user.nome.split(' ')[0] : 'Instrutor';
+
+  const dataExtensa = useMemo(() => {
+    try {
+      const data = new Date();
+      const formatada = data.toLocaleDateString('pt-BR', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+      });
+      return formatada.charAt(0).toUpperCase() + formatada.slice(1);
+    } catch {
+      return 'Visão Geral';
+    }
+  }, []);
 
   const chartData = {
     labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'],
@@ -37,25 +53,36 @@ export default function DashboardScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.pageTitle}>Visão Geral</Text>
+        {/* Saudação e Data */}
+        <View style={styles.greetingHeader}>
+          <Text style={styles.dateText}>{dataExtensa}</Text>
+          <Text style={styles.greetingTitle}>Olá, {primeiroNome} 👋</Text>
+          <Text style={styles.greetingSubtitle}>
+            Acompanhe suas aulas ministradas e a presença dos alunos
+          </Text>
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Métricas da Semana</Text>
+        </View>
 
         <View style={styles.kpiGrid}>
           {/* Card 1: Sessões Realizadas */}
           <View style={styles.kpiCard}>
             <View style={styles.kpiHeader}>
-              <View style={[styles.iconWrapper, { backgroundColor: '#a855f7' }]}>
-                <Feather name="activity" size={18} color="#fff" />
+              <View style={[styles.iconWrapper, { backgroundColor: isDark ? 'rgba(168, 85, 247, 0.2)' : '#faf5ff' }]}>
+                <Feather name="activity" size={18} color="#a855f7" />
               </View>
               <Text style={styles.kpiValue}>112</Text>
             </View>
-            <Text style={styles.kpiLabel}>Sessões Realizadas</Text>
+            <Text style={styles.kpiLabel}>Sessões Ministradas</Text>
           </View>
 
           {/* Card 2: Alunos Atendidos */}
           <View style={styles.kpiCard}>
             <View style={styles.kpiHeader}>
-              <View style={[styles.iconWrapper, { backgroundColor: '#f97316' }]}>
-                <Feather name="users" size={18} color="#fff" />
+              <View style={[styles.iconWrapper, { backgroundColor: isDark ? 'rgba(249, 115, 22, 0.2)' : '#fff7ed' }]}>
+                <Feather name="users" size={18} color="#f97316" />
               </View>
               <Text style={styles.kpiValue}>68</Text>
             </View>
@@ -65,19 +92,19 @@ export default function DashboardScreen() {
           {/* Card 3: Dia com Maior Atendimento */}
           <View style={styles.kpiCard}>
             <View style={styles.kpiHeader}>
-              <View style={[styles.iconWrapper, { backgroundColor: '#3b82f6' }]}>
-                <Feather name="calendar" size={18} color="#fff" />
+              <View style={[styles.iconWrapper, { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.2)' : '#eff6ff' }]}>
+                <Feather name="calendar" size={18} color="#3b82f6" />
               </View>
               <Text style={styles.kpiValue}>Terça</Text>
             </View>
-            <Text style={styles.kpiLabel}>Dia c/ Maior Atendimento</Text>
+            <Text style={styles.kpiLabel}>Dia c/ Maior Fluxo</Text>
           </View>
 
           {/* Card 4: Novos Alunos */}
           <View style={styles.kpiCard}>
             <View style={styles.kpiHeader}>
-              <View style={[styles.iconWrapper, { backgroundColor: '#10b981' }]}>
-                <Feather name="trending-up" size={18} color="#fff" />
+              <View style={[styles.iconWrapper, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.2)' : '#ecfdf5' }]}>
+                <Feather name="trending-up" size={18} color="#10b981" />
               </View>
               <Text style={styles.kpiValue}>+12</Text>
             </View>
@@ -85,17 +112,25 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Sessões Agendadas na Semana</Text>
+        {/* Gráfico de Sessões */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Ocupação Semanal</Text>
+          <Text style={styles.sectionSubtitle}>Distribuição de sessões de segunda a sexta</Text>
+        </View>
+
         <View style={styles.chartPlaceholder}>
           <WeeklyBarChart data={chartData} height={190} />
-          <Text style={styles.chartSubtitle}>Seg - Sex (Semanal)</Text>
+          <View style={styles.chartFooter}>
+            <Feather name="bar-chart-2" size={14} color={colors.textMuted} />
+            <Text style={styles.chartSubtitle}>Total de sessões confirmadas</Text>
+          </View>
         </View>
       </ScrollView>
     </View>
   );
 }
 
-const getStyles = (colors: ThemeColors) =>
+const getStyles = (colors: ThemeColors, isDark: boolean) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -119,14 +154,46 @@ const getStyles = (colors: ThemeColors) =>
     },
     content: {
       paddingHorizontal: 16,
-      paddingTop: 16,
+      paddingTop: 18,
       paddingBottom: 40,
     },
-    pageTitle: {
-      fontSize: 20,
+    greetingHeader: {
+      marginBottom: 20,
+    },
+    dateText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.primary,
+      textTransform: 'capitalize',
+      marginBottom: 4,
+      letterSpacing: 0.3,
+    },
+    greetingTitle: {
+      fontSize: 24,
       fontWeight: '800',
       color: colors.text,
-      marginBottom: 14,
+      letterSpacing: -0.5,
+      marginBottom: 4,
+    },
+    greetingSubtitle: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      lineHeight: 18,
+    },
+    sectionHeader: {
+      marginBottom: 12,
+      marginTop: 4,
+    },
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: '800',
+      color: colors.text,
+      letterSpacing: -0.2,
+    },
+    sectionSubtitle: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 2,
     },
     kpiGrid: {
       flexDirection: 'row',
@@ -137,12 +204,12 @@ const getStyles = (colors: ThemeColors) =>
     kpiCard: {
       backgroundColor: colors.surfaceCard,
       width: '48%',
-      padding: 14,
-      borderRadius: 14,
+      padding: 15,
+      borderRadius: 16,
       marginBottom: 12,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
+      shadowOpacity: isDark ? 0.2 : 0.05,
       shadowRadius: 6,
       elevation: 2,
       borderWidth: 1,
@@ -154,12 +221,12 @@ const getStyles = (colors: ThemeColors) =>
       marginBottom: 8,
     },
     iconWrapper: {
-      width: 40,
-      height: 40,
-      borderRadius: 12,
+      width: 38,
+      height: 38,
+      borderRadius: 11,
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: 12,
+      marginBottom: 10,
     },
     kpiValue: {
       fontSize: 26,
@@ -167,29 +234,29 @@ const getStyles = (colors: ThemeColors) =>
       color: colors.text,
     },
     kpiLabel: {
-      fontSize: 13,
+      fontSize: 12,
       color: colors.textSecondary,
-      fontWeight: '500',
-    },
-    sectionTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: colors.text,
-      marginBottom: 16,
-      marginTop: 8,
+      fontWeight: '600',
     },
     chartPlaceholder: {
       backgroundColor: colors.surfaceCard,
       borderRadius: 16,
-      padding: 24,
+      padding: 20,
       alignItems: 'center',
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
+      shadowOpacity: isDark ? 0.2 : 0.05,
       shadowRadius: 8,
       elevation: 2,
       borderWidth: 1,
       borderColor: colors.border,
+      marginBottom: 20,
+    },
+    chartFooter: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginTop: 10,
     },
     chartSubtitle: {
       color: colors.textMuted,

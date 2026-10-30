@@ -31,6 +31,8 @@ import AusenciaSheet from "@/components/agenda/AusenciaSheet";
 
 import DefinirAusenciaSheet from "@/components/agenda/DefinirAusenciaSheet";
 
+import AssistenteIASheet from "@/components/agenda/AssistenteIASheet";
+
 import { Agendamento, Ausencia } from "@/types/agenda";
 
 import { formatarDataExtensa } from "@/utils/utils";
@@ -126,12 +128,15 @@ export default function AgendaProfessorScreen() {
 
   const [definindoAusencia, setDefinindoAusencia] = useState(false);
 
+  const [iaAberta, setIaAberta] = useState(false);
+
   const navigation = useNavigation();
 
   const sheetAberto = Boolean(
     aulaSelecionada ||
     ausenciaSelecionada ||
-    definindoAusencia
+    definindoAusencia ||
+    iaAberta
   );
 
   useEffect(() => {
@@ -184,7 +189,10 @@ export default function AgendaProfessorScreen() {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top > 0 ? insets.top + 6 : 14 }]}>
         <View style={styles.headerTop}>
-          <Text style={styles.title}>Agenda</Text>
+          <View>
+            <Text style={styles.title}>Minha Agenda</Text>
+            <Text style={styles.subtitle}>Suas aulas e atendimentos</Text>
+          </View>
 
           <TouchableOpacity
             style={styles.monthButton}
@@ -245,9 +253,11 @@ export default function AgendaProfessorScreen() {
           {formatarDataExtensa(diaSelecionado)}
         </Text>
 
-        <Text style={styles.listaContagem}>
-          {totalAulas} {totalAulas === 1 ? "aula" : "aulas"}
-        </Text>
+        <View style={styles.countBadge}>
+          <Text style={styles.countBadgeText}>
+            {totalAulas} {totalAulas === 1 ? "sessão" : "sessões"}
+          </Text>
+        </View>
       </View>
 
       {loading ? (
@@ -284,24 +294,45 @@ export default function AgendaProfessorScreen() {
             )
           }
           ListEmptyComponent={
-            <View style={styles.center}>
-              <Feather name="calendar" size={32} color={colors.textMuted} />
-
-              <Text style={styles.vazioTexto}>Nenhuma aula neste dia.</Text>
+            <View style={styles.emptyContainer}>
+              <View style={styles.emptyIconCircle}>
+                <Feather name="calendar" size={30} color={colors.primary} />
+              </View>
+              <Text style={styles.emptyTitle}>Dia Livre de Aulas</Text>
+              <Text style={styles.emptySubtitle}>
+                Você não possui turmas agendadas para esta data.
+              </Text>
             </View>
           }
         />
       )}
 
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => setDefinindoAusencia(true)}
-        activeOpacity={0.85}
-      >
-        <Feather name="slash" size={20} color="#fff" />
+      <View style={styles.fabStack}>
+        <TouchableOpacity
+          style={styles.fabIa}
+          onPress={() => setIaAberta(true)}
+          activeOpacity={0.85}
+          accessibilityLabel="Assistente de Inteligência Artificial"
+        >
+          <Feather name="cpu" size={20} color={colors.primary} />
+        </TouchableOpacity>
 
-        <Text style={styles.fabTexto}>Ausência</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={() => setDefinindoAusencia(true)}
+          activeOpacity={0.85}
+        >
+          <Feather name="slash" size={20} color="#fff" />
+
+          <Text style={styles.fabTexto}>Ausência</Text>
+        </TouchableOpacity>
+      </View>
+
+      <AssistenteIASheet
+        visible={iaAberta}
+        onFechar={() => setIaAberta(false)}
+        onAlterado={recarregar}
+      />
 
       {/* Professor não edita nem exclui aula: só consulta e registra observações. */}
 
@@ -353,6 +384,7 @@ const getStyles = (colors: ThemeColors) =>
     },
 
     title: { fontSize: 20, fontWeight: "800", color: colors.text },
+    subtitle: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
 
     monthButton: {
       flexDirection: "row",
@@ -379,15 +411,61 @@ const getStyles = (colors: ThemeColors) =>
 
     listaTitulo: { fontSize: 15, fontWeight: "700", color: colors.text },
 
+    countBadge: {
+      backgroundColor: colors.surfaceSubtle,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+    },
+
+    countBadgeText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.primary,
+    },
+
     listaContagem: { fontSize: 12.5, color: colors.textMuted, fontWeight: "600" },
 
-    listContent: { paddingHorizontal: 20, paddingBottom: 100 },
+    listContent: { paddingHorizontal: 20, paddingBottom: 150 },
 
     center: {
       alignItems: "center",
       justifyContent: "center",
       paddingVertical: 48,
       gap: 10,
+    },
+
+    emptyContainer: {
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 50,
+      paddingHorizontal: 24,
+    },
+
+    emptyIconCircle: {
+      width: 58,
+      height: 58,
+      borderRadius: 29,
+      backgroundColor: colors.primaryLight,
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: 14,
+    },
+
+    emptyTitle: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: colors.text,
+      marginBottom: 6,
+    },
+
+    emptySubtitle: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      textAlign: "center",
+      lineHeight: 18,
     },
 
     vazioTexto: { fontSize: 14, color: colors.textMuted, textAlign: "center" },
@@ -402,10 +480,31 @@ const getStyles = (colors: ThemeColors) =>
 
     retryText: { color: colors.primary, fontWeight: "700", fontSize: 13 },
 
-    fab: {
+    fabStack: {
       position: "absolute",
       right: 20,
       bottom: 24,
+      alignItems: "flex-end",
+      gap: 12,
+    },
+
+    fabIa: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: colors.surfaceCard,
+      borderWidth: 1.5,
+      borderColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.25,
+      shadowRadius: 8,
+      elevation: 5,
+    },
+
+    fab: {
       flexDirection: "row",
       alignItems: "center",
       gap: 8,
