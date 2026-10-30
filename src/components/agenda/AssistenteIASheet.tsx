@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   StatusBar,
+  Image,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -497,11 +498,6 @@ export default function AssistenteIASheet({
   const ehProfessor = (user?.role || "").toUpperCase() === "PROFESSOR";
   const sugestoes = ehProfessor ? SUGESTOES_PROFESSOR : SUGESTOES_SECRETARIA;
   const primeiroNome = user?.nome ? user.nome.split(" ")[0] : "você";
-  const iniciaisUsuario = useMemo(() => {
-    const partes = (user?.nome || "OP").trim().split(/\s+/);
-    if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
-    return `${partes[0][0]}${partes[partes.length - 1][0]}`.toUpperCase();
-  }, [user?.nome]);
 
   const [conversas, setConversas] = useState<SessaoConversaIA[]>([]);
   const [conversaAtivaId, setConversaAtivaId] = useState<string | null>(null);
@@ -1174,8 +1170,11 @@ export default function AssistenteIASheet({
                 onPress={() => setMenuHistoricoAberto(true)}
                 activeOpacity={0.8}
               >
-                <Text style={styles.brandNome}>OneIA</Text>
-                <Text style={styles.brandModelo}>Studio</Text>
+                <Image
+                  source={require("../../../assets/logoOneIA.png")}
+                  style={styles.brandLogoImg}
+                  resizeMode="contain"
+                />
                 <Feather
                   name="chevron-down"
                   size={15}
@@ -1199,12 +1198,6 @@ export default function AssistenteIASheet({
                 <Feather name="edit-3" size={17} color={colors.text} />
               </TouchableOpacity>
 
-              <View style={styles.avatarRing}>
-                <View style={styles.avatarInner}>
-                  <Text style={styles.avatarTexto}>{iniciaisUsuario}</Text>
-                </View>
-              </View>
-
               <TouchableOpacity
                 style={styles.fecharTelaBtn}
                 onPress={onFechar}
@@ -1225,9 +1218,11 @@ export default function AssistenteIASheet({
               showsVerticalScrollIndicator={false}
             >
               <View style={styles.heroCenter}>
-                <View style={styles.heroStarGlow}>
-                  <Text style={styles.heroStarEmoji}>✨</Text>
-                </View>
+                <Image
+                  source={require("../../../assets/logoOneIA.png")}
+                  style={styles.heroLogoImg}
+                  resizeMode="contain"
+                />
 
                 <Text style={styles.heroSaudacao}>Olá, {primeiroNome}</Text>
                 <Text style={styles.heroPergunta}>Por onde começamos?</Text>
@@ -1289,8 +1284,11 @@ export default function AssistenteIASheet({
                 return (
                   <View key={msg.id} style={styles.blocoIa}>
                     <View style={styles.iaRespostaHeader}>
-                      <Text style={styles.iaSparkleMini}>✨</Text>
-                      <Text style={styles.iaRespostaLabel}>OneIA</Text>
+                      <Image
+                        source={require("../../../assets/logoOneIA.png")}
+                        style={styles.iaHeaderLogoImg}
+                        resizeMode="contain"
+                      />
                     </View>
 
                     {temPassos && (
@@ -1347,8 +1345,11 @@ export default function AssistenteIASheet({
               {carregando && (
                 <View style={styles.blocoIa}>
                   <View style={styles.iaRespostaHeader}>
-                    <Text style={styles.iaSparkleMini}>✨</Text>
-                    <Text style={styles.iaRespostaLabel}>OneIA</Text>
+                    <Image
+                      source={require("../../../assets/logoOneIA.png")}
+                      style={styles.iaHeaderLogoImg}
+                      resizeMode="contain"
+                    />
                   </View>
                   <View style={styles.balaoIaCarregando}>
                     {passosAtuais.length > 0 ? (
@@ -1522,8 +1523,11 @@ export default function AssistenteIASheet({
             <View style={styles.drawerPanel}>
               <View style={styles.drawerHeader}>
                 <View style={styles.drawerBrandRow}>
-                  <Text style={styles.drawerSparkle}>✨</Text>
-                  <Text style={styles.drawerTitle}>Histórico OneIA</Text>
+                  <Image
+                    source={require("../../../assets/logoOneIA.png")}
+                    style={styles.drawerLogoImg}
+                    resizeMode="contain"
+                  />
                 </View>
                 <TouchableOpacity
                   style={styles.drawerCloseBtn}
@@ -1715,17 +1719,9 @@ const getStyles = (
       gap: 6,
     },
 
-    brandNome: {
-      fontSize: 18,
-      fontWeight: "800",
-      color: colors.text,
-      letterSpacing: -0.2,
-    },
-
-    brandModelo: {
-      fontSize: 16,
-      fontWeight: "500",
-      color: colors.textSecondary,
+    brandLogoImg: {
+      width: 102,
+      height: 29,
     },
 
     topBarRight: {
@@ -1743,32 +1739,6 @@ const getStyles = (
       borderColor: isDark ? "rgba(255,255,255,0.28)" : "rgba(15,23,42,0.22)",
       alignItems: "center",
       justifyContent: "center",
-    },
-
-    avatarRing: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      padding: 2,
-      borderWidth: 1.5,
-      borderColor: colors.primary,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-
-    avatarInner: {
-      width: "100%",
-      height: "100%",
-      borderRadius: 16,
-      backgroundColor: colors.primaryLight,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-
-    avatarTexto: {
-      fontSize: 12,
-      fontWeight: "800",
-      color: colors.primary,
     },
 
     fecharTelaBtn: {
@@ -1791,20 +1761,10 @@ const getStyles = (
       justifyContent: "center",
     },
 
-    heroStarGlow: {
-      width: 58,
-      height: 58,
-      borderRadius: 29,
-      backgroundColor: isDark
-        ? "rgba(234, 96, 30, 0.14)"
-        : "rgba(234, 96, 30, 0.1)",
-      alignItems: "center",
-      justifyContent: "center",
+    heroLogoImg: {
+      width: 178,
+      height: 52,
       marginBottom: 18,
-    },
-
-    heroStarEmoji: {
-      fontSize: 30,
     },
 
     heroSaudacao: {
@@ -1910,14 +1870,9 @@ const getStyles = (
       paddingLeft: 2,
     },
 
-    iaSparkleMini: {
-      fontSize: 14,
-    },
-
-    iaRespostaLabel: {
-      fontSize: 12.5,
-      fontWeight: "700",
-      color: colors.textSecondary,
+    iaHeaderLogoImg: {
+      width: 76,
+      height: 22,
     },
 
     balaoIa: {
@@ -2328,14 +2283,9 @@ const getStyles = (
       gap: 8,
     },
 
-    drawerSparkle: {
-      fontSize: 18,
-    },
-
-    drawerTitle: {
-      fontSize: 17,
-      fontWeight: "800",
-      color: colors.text,
+    drawerLogoImg: {
+      width: 100,
+      height: 29,
     },
 
     drawerCloseBtn: {
