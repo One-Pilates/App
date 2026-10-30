@@ -422,7 +422,7 @@ export default function GerenciamentoProfessor() {
                 color={colors.primary}
                 style={{ marginVertical: 20 }}
               />
-            ) : null
+            ) : undefined
           }
         />
       )}

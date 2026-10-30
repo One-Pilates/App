@@ -12,7 +12,12 @@ import {
   Platform,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { Audio } from "expo-av";
+import {
+  useAudioRecorder,
+  AudioModule,
+  RecordingPresets,
+  setAudioModeAsync,
+} from "expo-audio";
 import * as DocumentPicker from "expo-document-picker";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme, ThemeColors } from "@/contexts/ThemeContext";
@@ -347,12 +352,12 @@ export default function AssistenteIASheet({
   // Estados de gravação de áudio
   const [gravando, setGravando] = useState(false);
   const [segundosGravacao, setSegundosGravacao] = useState(0);
-  const recordingRef = useRef<Audio.Recording | null>(null);
+  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const webRecorderRef = useRef<any>(null);
   const webChunksRef = useRef<BlobPart[]>([]);
   const timerGravacaoRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const scrollRef = useRef<ScrollView | null>(null);
+  const scrollRef = useRef<React.ComponentRef<typeof ScrollView> | null>(null);
   const novaConversaRef = useRef(false);
 
   const sugestoes =
@@ -581,7 +586,7 @@ export default function AssistenteIASheet({
         return;
       }
 
-      const permissao = await Audio.requestPermissionsAsync();
+      const permissao = await AudioModule.requestRecordingPermissionsAsync();
       if (!permissao.granted) {
         notify.error(
           "Permissão de microfone negada. Habilite o microfone nas configurações do dispositivo."
@@ -589,15 +594,13 @@ export default function AssistenteIASheet({
         return;
       }
 
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
+      await setAudioModeAsync({
+        allowsRecording: true,
+        playsInSilentMode: true,
       });
 
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
-      recordingRef.current = recording;
+      await audioRecorder.prepareToRecordAsync();
+      audioRecorder.record();
       setGravando(true);
       iniciarTimer();
     } catch (err) {
@@ -621,13 +624,12 @@ export default function AssistenteIASheet({
         return;
       }
 
-      if (recordingRef.current) {
-        await recordingRef.current.stopAndUnloadAsync();
-        await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
-        recordingRef.current = null;
+      if (audioRecorder.isRecording) {
+        await audioRecorder.stop();
       }
+      await setAudioModeAsync({ allowsRecording: false });
     } catch {
-      recordingRef.current = null;
+      // ignora erro ao abortar gravação
     }
   };
 
@@ -663,14 +665,10 @@ export default function AssistenteIASheet({
         return;
       }
 
-      const recording = recordingRef.current;
-      if (!recording) return;
-      recordingRef.current = null;
+      await audioRecorder.stop();
+      await setAudioModeAsync({ allowsRecording: false });
 
-      await recording.stopAndUnloadAsync();
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
-
-      const uri = recording.getURI();
+      const uri = audioRecorder.uri;
       if (!uri) {
         notify.error("Não foi possível obter o arquivo da gravação.");
         return;

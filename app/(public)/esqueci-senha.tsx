@@ -27,7 +27,7 @@ export default function EsqueciSenha() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const emailInputRef = useRef<TextInput>(null);
+  const emailInputRef = useRef<React.ComponentRef<typeof TextInput>>(null);
 
   const handleEnviar = async () => {
     const emailTrimmed = email.trim();

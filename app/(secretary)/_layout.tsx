@@ -64,7 +64,7 @@ export default function SecretaryLayout() {
         options={{
           title: "Início",
           tabBarIcon: ({ color, size }) => (
-            <Feather name="pie-chart" size={size} color={color} />
+            <Feather name="pie-chart" size={size} color={String(color)} />
           ),
         }}
       />
@@ -74,7 +74,7 @@ export default function SecretaryLayout() {
         options={{
           title: "Agenda",
           tabBarIcon: ({ color, size }) => (
-            <Feather name="calendar" size={size} color={color} />
+            <Feather name="calendar" size={size} color={String(color)} />
           ),
         }}
       />
@@ -84,7 +84,7 @@ export default function SecretaryLayout() {
         options={{
           title: "Alunos",
           tabBarIcon: ({ color, size }) => (
-            <Feather name="users" size={size} color={color} />
+            <Feather name="users" size={size} color={String(color)} />
           ),
         }}
       />
@@ -94,7 +94,7 @@ export default function SecretaryLayout() {
         options={{
           title: "Mais",
           tabBarIcon: ({ color, size }) => (
-            <Feather name="menu" size={size} color={color} />
+            <Feather name="menu" size={size} color={String(color)} />
           ),
         }}
       />

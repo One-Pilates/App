@@ -52,8 +52,8 @@ export default function NovaSenha() {
   const [loading, setLoading] = useState(false);
   const [focusedInput, setFocusedInput] = useState<"pass1" | "pass2" | null>(null);
 
-  const pass1Ref = useRef<TextInput>(null);
-  const pass2Ref = useRef<TextInput>(null);
+  const pass1Ref = useRef<React.ComponentRef<typeof TextInput>>(null);
+  const pass2Ref = useRef<React.ComponentRef<typeof TextInput>>(null);
 
   const rules = validatePassword(password1);
   const allRulesOk = Object.values(rules).every(Boolean);
