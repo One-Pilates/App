@@ -52,8 +52,8 @@ export default function LoginScreen() {
   const [focusedInput, setFocusedInput] = useState<"email" | "password" | null>(null);
 
   // Refs diretos para foco garantido ao tocar no container do input
-  const emailInputRef = useRef<TextInput>(null);
-  const passwordInputRef = useRef<TextInput>(null);
+  const emailInputRef = useRef<React.ComponentRef<typeof TextInput>>(null);
+  const passwordInputRef = useRef<React.ComponentRef<typeof TextInput>>(null);
 
   // Transições entre telas
   const welcomeFade = useRef(new Animated.Value(1)).current;

@@ -1,55 +1,86 @@
+import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-
 import { Feather } from "@expo/vector-icons";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface Props {
-  etapas: { label: string }[];
-
-  etapaAtual: number;
-
+  etapas?: { label: string }[];
+  totalSteps?: number;
+  etapaAtual?: number;
+  currentStep?: number;
   onIrParaEtapa?: (etapa: number) => void;
+  onStepClick?: (etapa: number) => void;
 }
 
 export default function StepIndicator({
   etapas,
+  totalSteps = 4,
   etapaAtual,
+  currentStep,
   onIrParaEtapa,
+  onStepClick,
 }: Props) {
+  const { colors } = useTheme();
+
+  const activeStep = etapaAtual ?? currentStep ?? 1;
+  const count = etapas ? etapas.length : totalSteps;
+  const handlePress = onIrParaEtapa ?? onStepClick;
+
+  const stepsArray = Array.from({ length: count }, (_, i) => i + 1);
+
   return (
     <View style={styles.stepper}>
-      {etapas.map((etapa, index) => {
-        const numero = index + 1;
-
-        const ativo = numero === etapaAtual;
-
-        const concluido = numero < etapaAtual;
-
-        const clicavel = numero <= etapaAtual;
+      {stepsArray.map((numero) => {
+        const ativo = numero === activeStep;
+        const concluido = numero < activeStep;
+        const clicavel = numero <= activeStep;
 
         return (
-          <View key={etapa.label} style={styles.wrapper}>
+          <React.Fragment key={numero}>
             <TouchableOpacity
               style={[
                 styles.circle,
-                ativo && styles.circleActive,
-                concluido && styles.circleDone,
+                {
+                  backgroundColor: concluido
+                    ? colors.primary
+                    : ativo
+                    ? colors.surfaceCard
+                    : colors.surfaceSubtle,
+                  borderColor:
+                    concluido || ativo ? colors.primary : colors.borderSubtle,
+                },
               ]}
-              onPress={() => clicavel && onIrParaEtapa?.(numero)}
-              disabled={!clicavel || !onIrParaEtapa}
+              onPress={() => clicavel && handlePress?.(numero)}
+              disabled={!clicavel || !handlePress}
+              activeOpacity={0.7}
             >
               {concluido ? (
                 <Feather name="check" size={14} color="#fff" />
               ) : (
-                <Text style={[styles.number, ativo && styles.numberActive]}>
+                <Text
+                  style={[
+                    styles.number,
+                    { color: ativo ? colors.primary : colors.textMuted },
+                  ]}
+                >
                   {numero}
                 </Text>
               )}
             </TouchableOpacity>
 
-            {numero < etapas.length && (
-              <View style={[styles.line, concluido && styles.lineDone]} />
+            {numero < count && (
+              <View
+                style={[
+                  styles.line,
+                  {
+                    backgroundColor: concluido
+                      ? colors.primary
+                      : colors.borderSubtle,
+                  },
+                ]}
+              />
             )}
-          </View>
+          </React.Fragment>
         );
       })}
     </View>
@@ -57,37 +88,32 @@ export default function StepIndicator({
 }
 
 const styles = StyleSheet.create({
-  stepper: { flexDirection: "row", alignItems: "center" },
-
-  wrapper: { flexDirection: "row", alignItems: "center", flex: 1 },
-
+  stepper: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+    paddingHorizontal: 8,
+    marginVertical: 4,
+  },
   circle: {
     width: 32,
-
     height: 32,
-
     borderRadius: 16,
-
-    backgroundColor: "#f1f5f9",
-
     justifyContent: "center",
-
     alignItems: "center",
-
     borderWidth: 2,
-
-    borderColor: "#e2e8f0",
   },
-
-  circleActive: { backgroundColor: "#fff", borderColor: "#f77433" },
-
-  circleDone: { backgroundColor: "#f77433", borderColor: "#f77433" },
-
-  number: { fontSize: 14, fontWeight: "700", color: "#94a3b8" },
-
-  numberActive: { color: "#f77433" },
-
-  line: { flex: 1, height: 2, backgroundColor: "#e2e8f0", marginHorizontal: 4 },
-
-  lineDone: { backgroundColor: "#f77433" },
+  number: {
+    fontSize: 14,
+    fontWeight: "700",
+    textAlign: "center",
+    textAlignVertical: "center",
+    includeFontPadding: false,
+  },
+  line: {
+    flex: 1,
+    height: 2,
+    marginHorizontal: 8,
+  },
 });

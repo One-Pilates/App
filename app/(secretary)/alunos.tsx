@@ -203,39 +203,39 @@ export default function AlunosScreen() {
     return (
       <View style={styles.studentCard}>
         <TouchableOpacity
-          style={styles.avatar}
+          style={styles.cardMainPressable}
+          activeOpacity={0.7}
           onPress={() =>
             router.push({
               pathname: "/(secretary)/perfilView/[tipo]/[id]",
-
               params: { tipo: "aluno", id: String(item.id) },
             })
           }
         >
-          <Text style={styles.avatarText}>
-            {item.nome?.charAt(0)?.toUpperCase()}
-          </Text>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {item.nome?.charAt(0)?.toUpperCase()}
+            </Text>
+          </View>
+
+          <View style={styles.infoContainer}>
+            <Text style={styles.studentName} numberOfLines={1}>
+              {item.nome}
+            </Text>
+
+            <Text style={styles.studentSub} numberOfLines={1}>
+              {item.email}
+              {idade != null ? ` • ${idade} anos` : ""}
+            </Text>
+
+            {item.alunoComLimitacoesFisicas ? (
+              <View style={styles.limitBadge}>
+                <Feather name="alert-triangle" size={11} color={colors.isDark ? "#fbbf24" : "#b45309"} />
+                <Text style={styles.limitBadgeText}>Limitações físicas</Text>
+              </View>
+            ) : null}
+          </View>
         </TouchableOpacity>
-
-        <View style={styles.infoContainer}>
-          <Text style={styles.studentName} numberOfLines={1}>
-            {item.nome}
-          </Text>
-
-          <Text style={styles.studentSub} numberOfLines={1}>
-            {item.email}
-
-            {idade != null ? ` • ${idade} anos` : ""}
-          </Text>
-
-          {item.alunoComLimitacoesFisicas ? (
-            <View style={styles.limitBadge}>
-              <Feather name="alert-triangle" size={11} color="#b45309" />
-
-              <Text style={styles.limitBadgeText}>Limitações físicas</Text>
-            </View>
-          ) : null}
-        </View>
 
         <View style={styles.rightSide}>
           <View
@@ -289,13 +289,18 @@ export default function AlunosScreen() {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top > 0 ? insets.top + 6 : 14 }]}>
         <View style={styles.headerTop}>
-          <Text style={styles.title}>Alunos</Text>
+          <View>
+            <Text style={styles.title}>Alunos</Text>
+            <Text style={styles.subtitle}>Gestão de matrículas e cadastros</Text>
+          </View>
 
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => router.push("/(secretary)/aluno/cadastrar")}
+            activeOpacity={0.8}
           >
-            <Text style={styles.addButtonText}>+ Novo Aluno</Text>
+            <Feather name="user-plus" size={15} color="#fff" />
+            <Text style={styles.addButtonText}>Novo Aluno</Text>
           </TouchableOpacity>
         </View>
 
@@ -357,7 +362,17 @@ export default function AlunosScreen() {
             />
           }
           ListEmptyComponent={
-            <Text style={styles.empty}>Nenhum aluno encontrado.</Text>
+            <View style={styles.emptyContainer}>
+              <View style={styles.emptyIconCircle}>
+                <Feather name="users" size={28} color={colors.primary} />
+              </View>
+              <Text style={styles.emptyTitle}>Nenhum aluno encontrado</Text>
+              <Text style={styles.emptySubtitle}>
+                {busca.trim()
+                  ? `Nenhum resultado para "${busca}". Verifique o nome ou ajuste os filtros.`
+                  : "Não há alunos cadastrados nesta categoria."}
+              </Text>
+            </View>
           }
         />
       )}
@@ -436,11 +451,15 @@ const getStyles = (colors: ThemeColors) =>
     },
 
     title: { fontSize: 20, fontWeight: "800", color: colors.text },
+    subtitle: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
 
     addButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
       backgroundColor: colors.primary,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 9,
       borderRadius: 10,
       shadowColor: colors.primary,
       shadowOffset: { width: 0, height: 4 },
@@ -483,6 +502,38 @@ const getStyles = (colors: ThemeColors) =>
 
     listContent: { padding: 16, paddingBottom: 24 },
 
+    emptyContainer: {
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 60,
+      paddingHorizontal: 24,
+    },
+
+    emptyIconCircle: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: colors.primaryLight,
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: 14,
+    },
+
+    emptyTitle: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: colors.text,
+      marginBottom: 6,
+      textAlign: "center",
+    },
+
+    emptySubtitle: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      textAlign: "center",
+      lineHeight: 18,
+    },
+
     empty: {
       textAlign: "center",
       color: colors.textMuted,
@@ -499,11 +550,18 @@ const getStyles = (colors: ThemeColors) =>
       marginBottom: 16,
       shadowColor: "#000",
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
+      shadowOpacity: colors.isDark ? 0.2 : 0.08,
       shadowRadius: 8,
       elevation: 2,
       borderWidth: 1,
       borderColor: colors.border,
+    },
+
+    cardMainPressable: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      marginRight: 10,
     },
 
     avatar: {

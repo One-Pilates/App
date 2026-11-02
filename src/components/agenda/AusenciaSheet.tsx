@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   Modal,
   View,
@@ -6,63 +7,47 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
-
 import { Feather } from "@expo/vector-icons";
-
 import api from "@/services/api";
-
 import { notify } from "@/utils/notify";
-
 import { Ausencia } from "@/types/agenda";
-
+import { useTheme, ThemeColors } from "@/contexts/ThemeContext";
 import { formatarDataBr, horaDeDataHora } from "@/utils/utils";
 
 interface Props {
   visible: boolean;
-
   ausencia: Ausencia | null;
-
   podeExcluir: boolean;
-
   onFechar: () => void;
-
   onExcluida: () => void;
 }
 
 export default function AusenciaSheet({
   visible,
-
   ausencia,
-
   podeExcluir,
-
   onFechar,
-
   onExcluida,
 }: Props) {
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+
   if (!ausencia) return null;
 
   function excluir() {
     Alert.alert("Excluir ausência?", "Esta ação não pode ser desfeita.", [
       { text: "Cancelar", style: "cancel" },
-
       {
         text: "Sim, excluir",
-
         style: "destructive",
-
         onPress: async () => {
           try {
             await api.delete(`api/ausencias/${ausencia!.id}`);
-
             notify.success("Ausência excluída com sucesso!");
-
             onFechar();
-
             onExcluida();
           } catch (error) {
             console.error("Erro ao excluir ausência:", error);
-
             notify.error("Erro ao excluir ausência. Tente novamente.");
           }
         },
@@ -91,21 +76,20 @@ export default function AusenciaSheet({
           <View style={styles.header}>
             <View style={styles.headerTitulo}>
               <View style={styles.icone}>
-                <Feather name="slash" size={18} color="#475569" />
+                <Feather name="slash" size={18} color={colors.textSecondary} />
               </View>
 
               <Text style={styles.titulo}>Ausência do professor</Text>
             </View>
 
             <TouchableOpacity style={styles.iconBtn} onPress={onFechar}>
-              <Feather name="x" size={20} color="#64748b" />
+              <Feather name="x" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
           <View style={styles.body}>
             <View style={styles.bloco}>
               <Text style={styles.rotulo}>Motivo</Text>
-
               <Text style={styles.valor}>
                 {ausencia.motivo || "Não informado"}
               </Text>
@@ -113,8 +97,7 @@ export default function AusenciaSheet({
 
             <View style={styles.linha}>
               <View style={styles.linhaRotulo}>
-                <Feather name="calendar" size={14} color="#94a3b8" />
-
+                <Feather name="calendar" size={14} color={colors.textSecondary} />
                 <Text style={styles.rotulo}>Início</Text>
               </View>
 
@@ -126,8 +109,7 @@ export default function AusenciaSheet({
 
             <View style={styles.linha}>
               <View style={styles.linhaRotulo}>
-                <Feather name="clock" size={14} color="#94a3b8" />
-
+                <Feather name="clock" size={14} color={colors.textSecondary} />
                 <Text style={styles.rotulo}>Fim</Text>
               </View>
 
@@ -140,7 +122,6 @@ export default function AusenciaSheet({
             {podeExcluir && (
               <TouchableOpacity style={styles.btnExcluir} onPress={excluir}>
                 <Feather name="trash-2" size={16} color="#fff" />
-
                 <Text style={styles.btnExcluirTexto}>Excluir ausência</Text>
               </TouchableOpacity>
             )}
@@ -151,112 +132,88 @@ export default function AusenciaSheet({
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)" },
+const getStyles = (colors: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: isDark ? "rgba(0,0,0,0.68)" : "rgba(0,0,0,0.4)",
+    },
 
-  overlayTop: { flex: 1 },
+    overlayTop: { flex: 1 },
 
-  sheet: {
-    backgroundColor: "#fff",
+    sheet: {
+      backgroundColor: colors.surfaceCard,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      borderTopWidth: isDark ? 1 : 0,
+      borderTopColor: colors.border,
+      paddingBottom: 28,
+    },
 
-    borderTopLeftRadius: 24,
+    handle: {
+      width: 40,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.borderSubtle,
+      alignSelf: "center",
+      marginTop: 10,
+    },
 
-    borderTopRightRadius: 24,
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 20,
+      paddingTop: 14,
+      paddingBottom: 10,
+    },
 
-    paddingBottom: 28,
-  },
+    headerTitulo: { flexDirection: "row", alignItems: "center", gap: 10 },
 
-  handle: {
-    width: 40,
+    icone: {
+      width: 36,
+      height: 36,
+      borderRadius: 11,
+      backgroundColor: colors.surfaceSubtle,
+      alignItems: "center",
+      justifyContent: "center",
+    },
 
-    height: 4,
+    titulo: { fontSize: 17, fontWeight: "bold", color: colors.text },
 
-    borderRadius: 2,
+    iconBtn: { padding: 7 },
 
-    backgroundColor: "#e2e8f0",
+    body: { paddingHorizontal: 20, paddingTop: 8 },
 
-    alignSelf: "center",
+    bloco: { marginBottom: 14 },
 
-    marginTop: 10,
-  },
+    rotulo: { fontSize: 13, color: colors.textSecondary, fontWeight: "600" },
 
-  header: {
-    flexDirection: "row",
+    valor: { fontSize: 14.5, color: colors.text, marginTop: 5, lineHeight: 20 },
 
-    alignItems: "center",
+    linha: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 12,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
 
-    justifyContent: "space-between",
+    linhaRotulo: { flexDirection: "row", alignItems: "center", gap: 6 },
 
-    paddingHorizontal: 20,
+    valorLinha: { fontSize: 14, color: colors.text, fontWeight: "600" },
 
-    paddingTop: 14,
+    btnExcluir: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      backgroundColor: colors.danger,
+      borderRadius: 12,
+      paddingVertical: 14,
+      marginTop: 20,
+    },
 
-    paddingBottom: 10,
-  },
-
-  headerTitulo: { flexDirection: "row", alignItems: "center", gap: 10 },
-
-  icone: {
-    width: 36,
-
-    height: 36,
-
-    borderRadius: 11,
-
-    backgroundColor: "#f1f5f9",
-
-    alignItems: "center",
-
-    justifyContent: "center",
-  },
-
-  titulo: { fontSize: 17, fontWeight: "bold", color: "#0f172a" },
-
-  iconBtn: { padding: 7 },
-
-  body: { paddingHorizontal: 20, paddingTop: 8 },
-
-  bloco: { marginBottom: 14 },
-
-  rotulo: { fontSize: 13, color: "#94a3b8", fontWeight: "600" },
-
-  valor: { fontSize: 14.5, color: "#0f172a", marginTop: 5, lineHeight: 20 },
-
-  linha: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    justifyContent: "space-between",
-
-    paddingVertical: 12,
-
-    borderTopWidth: 1,
-
-    borderTopColor: "#f8fafc",
-  },
-
-  linhaRotulo: { flexDirection: "row", alignItems: "center", gap: 6 },
-
-  valorLinha: { fontSize: 14, color: "#0f172a", fontWeight: "600" },
-
-  btnExcluir: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    justifyContent: "center",
-
-    gap: 8,
-
-    backgroundColor: "#e11d48",
-
-    borderRadius: 12,
-
-    paddingVertical: 14,
-
-    marginTop: 20,
-  },
-
-  btnExcluirTexto: { color: "#fff", fontSize: 15, fontWeight: "bold" },
-});
+    btnExcluirTexto: { color: "#fff", fontSize: 15, fontWeight: "bold" },
+  });

@@ -9,7 +9,7 @@ export const api = axios.create({
   },
 });
 
-function normalizeToken(rawToken: string | null | undefined): string {
+export function normalizeToken(rawToken: string | null | undefined): string {
   if (!rawToken) return '';
   const semAspas = rawToken.trim().replace(/^"|"$/g, '');
   if (!semAspas) return '';
@@ -17,6 +17,7 @@ function normalizeToken(rawToken: string | null | undefined): string {
 }
 
 function isAuthenticationFailure(error: AxiosError): boolean {
+  if ((error?.config as any)?.skipAuthRedirect) return false;
   const status = error?.response?.status;
   const data = error?.response?.data as any;
   const msg = typeof data === 'string' ? data : data?.message || data?.erro || '';

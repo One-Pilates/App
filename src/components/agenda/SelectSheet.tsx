@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   Modal,
   View,
@@ -6,44 +7,35 @@ import {
   TouchableOpacity,
   FlatList,
 } from "react-native";
-
 import { Feather } from "@expo/vector-icons";
+import { useTheme, ThemeColors } from "@/contexts/ThemeContext";
 
 export interface Opcao {
   label: string;
-
   value: string;
 }
 
 interface Props {
   visible: boolean;
-
   titulo: string;
-
   opcoes: Opcao[];
-
   valor: string;
-
   onSelecionar: (valor: string) => void;
-
   onFechar: () => void;
 }
 
 // Seletor em bottom sheet — substitui os <select> do web.
-
 export default function SelectSheet({
   visible,
-
   titulo,
-
   opcoes,
-
   valor,
-
   onSelecionar,
-
   onFechar,
 }: Props) {
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+
   return (
     <Modal
       visible={visible}
@@ -64,7 +56,7 @@ export default function SelectSheet({
             <Text style={styles.titulo}>{titulo}</Text>
 
             <TouchableOpacity onPress={onFechar} style={styles.closeBtn}>
-              <Feather name="x" size={20} color="#64748b" />
+              <Feather name="x" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
@@ -80,7 +72,6 @@ export default function SelectSheet({
                   style={[styles.opcao, selecionado && styles.opcaoSelecionada]}
                   onPress={() => {
                     onSelecionar(item.value);
-
                     onFechar();
                   }}
                 >
@@ -94,7 +85,7 @@ export default function SelectSheet({
                   </Text>
 
                   {selecionado && (
-                    <Feather name="check" size={18} color="#f77433" />
+                    <Feather name="check" size={18} color={colors.primary} />
                   )}
                 </TouchableOpacity>
               );
@@ -106,74 +97,59 @@ export default function SelectSheet({
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "flex-end",
-  },
+const getStyles = (colors: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: isDark ? "rgba(0,0,0,0.65)" : "rgba(0,0,0,0.4)",
+      justifyContent: "flex-end",
+    },
 
-  sheet: {
-    backgroundColor: "#fff",
+    sheet: {
+      backgroundColor: colors.surfaceCard,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      borderTopWidth: isDark ? 1 : 0,
+      borderTopColor: colors.border,
+      paddingBottom: 32,
+      maxHeight: "70%",
+    },
 
-    borderTopLeftRadius: 24,
+    handle: {
+      width: 40,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.borderSubtle,
+      alignSelf: "center",
+      marginTop: 10,
+    },
 
-    borderTopRightRadius: 24,
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+    },
 
-    paddingBottom: 32,
+    titulo: { fontSize: 17, fontWeight: "bold", color: colors.text },
 
-    maxHeight: "70%",
-  },
+    closeBtn: { padding: 4 },
 
-  handle: {
-    width: 40,
+    lista: { paddingHorizontal: 12 },
 
-    height: 4,
+    opcao: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 14,
+      paddingHorizontal: 14,
+      borderRadius: 12,
+    },
 
-    borderRadius: 2,
+    opcaoSelecionada: { backgroundColor: colors.primaryLight },
 
-    backgroundColor: "#e2e8f0",
+    opcaoTexto: { fontSize: 15, color: colors.textSecondary },
 
-    alignSelf: "center",
-
-    marginTop: 10,
-  },
-
-  header: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    justifyContent: "space-between",
-
-    paddingHorizontal: 20,
-
-    paddingVertical: 16,
-  },
-
-  titulo: { fontSize: 17, fontWeight: "bold", color: "#0f172a" },
-
-  closeBtn: { padding: 4 },
-
-  lista: { paddingHorizontal: 12 },
-
-  opcao: {
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    justifyContent: "space-between",
-
-    paddingVertical: 14,
-
-    paddingHorizontal: 14,
-
-    borderRadius: 12,
-  },
-
-  opcaoSelecionada: { backgroundColor: "#fff3eb" },
-
-  opcaoTexto: { fontSize: 15, color: "#334155" },
-
-  opcaoTextoSelecionado: { color: "#f77433", fontWeight: "700" },
-});
+    opcaoTextoSelecionado: { color: colors.primary, fontWeight: "700" },
+  });
