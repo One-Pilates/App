@@ -26,6 +26,7 @@ function ThemedRootApp() {
         <Stack.Screen name="(public)" />
         <Stack.Screen name="(secretary)" />
         <Stack.Screen name="(teacher)" />
+        <Stack.Screen name="(aluno)" />
       </Stack>
       <GlobalAlertModal />
     </>

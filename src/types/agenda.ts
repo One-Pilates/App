@@ -8,6 +8,8 @@ export interface AlunoAgendamento {
   observacao?: string | null;
 
   alunoComLimitacoesFisicas?: boolean;
+
+  status?: string;
 }
 
 export interface Agendamento {
