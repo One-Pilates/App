@@ -557,6 +557,18 @@ export default function LoginScreen() {
 
               <View style={styles.roleCardItem}>
                 <View style={styles.roleIconBadge}>
+                  <Feather name="users" size={18} color="#f77433" />
+                </View>
+                <View style={styles.roleTextContainer}>
+                  <Text style={styles.roleName}>Alunos(as)</Text>
+                  <Text style={styles.roleDescription}>
+                    Cadastrados pela secretaria. Use o e-mail cadastrado e a senha enviada por e-mail
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.roleCardItem}>
+                <View style={styles.roleIconBadge}>
                   <Feather name="key" size={18} color="#f77433" />
                 </View>
                 <View style={styles.roleTextContainer}>

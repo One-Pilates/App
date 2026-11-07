@@ -41,6 +41,7 @@ import {
   getEstadoNome,
   dataParaIso,
   isoParaData,
+  anexarArquivo,
 } from "@/utils/utils";
 
 interface Especialidade {
@@ -482,13 +483,13 @@ export default function CollaboratorForm({
 
     const formData = new FormData();
 
-    formData.append("file", {
+    await anexarArquivo(formData, "file", {
       uri: pickedImage.uri,
 
       name: pickedImage.fileName || `foto_${colaboradorId}.jpg`,
 
       type: pickedImage.mimeType || "image/jpeg",
-    } as any);
+    });
 
     const endpoint = isProfessor
       ? `api/professores/${colaboradorId}/uploadFoto`
@@ -553,11 +554,14 @@ export default function CollaboratorForm({
     try {
       const response = await api.post(url, payload);
 
+      let fotoFalhou = false;
+
       if (pickedImage && response.data?.id) {
         try {
           await uploadFoto(response.data.id);
         } catch (fotoError) {
           console.error("Erro ao enviar foto (não crítico):", fotoError);
+          fotoFalhou = true;
         }
       }
 
@@ -565,7 +569,10 @@ export default function CollaboratorForm({
         "Colaborador cadastrado com sucesso!",
 
         `Nome: ${dadosPessoais.nomeCompleto}\nEmail: ${dadosPessoais.email}\n\n` +
-          `Senha gerada: ${senhaGerada}\nGuarde esta senha para o primeiro acesso.`,
+          `Senha gerada: ${senhaGerada}\nGuarde esta senha para o primeiro acesso.` +
+          (fotoFalhou
+            ? "\n\nA foto não foi enviada. Adicione-a depois em Meu Perfil ou na edição do colaborador."
+            : ""),
 
         [{ text: "OK, entendi!", onPress: () => router.back() }],
       );

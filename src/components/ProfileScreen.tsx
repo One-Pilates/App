@@ -29,6 +29,7 @@ import {
   getEstadoNome,
   dataParaIso,
   isoParaData,
+  anexarArquivo,
 } from "@/utils/utils";
 
 import { notify } from "@/utils/notify";
@@ -414,17 +415,19 @@ export default function ProfileScreen() {
 
       let imageName = user.foto;
 
+      let fotoFalhou = false;
+
       if (pickedImage) {
         try {
           const formData = new FormData();
 
-          formData.append("file", {
+          await anexarArquivo(formData, "file", {
             uri: pickedImage.uri,
 
             name: pickedImage.fileName || `foto_${user.id}.jpg`,
 
             type: pickedImage.mimeType || "image/jpeg",
-          } as any);
+          });
 
           const fotoResponse = await api.post(endpointImg, formData, {
             headers: { "Content-Type": "multipart/form-data" },
@@ -443,9 +446,7 @@ export default function ProfileScreen() {
         } catch (err) {
           console.error("Erro ao fazer upload da foto:", err);
 
-          notify.error(
-            "Não foi possível enviar a imagem. Os outros dados serão salvos.",
-          );
+          fotoFalhou = true;
         }
       }
 
@@ -520,11 +521,12 @@ export default function ProfileScreen() {
 
       setOriginalSpecialties(selectedSpecialties);
 
-      setPickedImage(null);
+      // se a foto falhou, mantém a imagem escolhida para a pessoa tentar de novo
+      if (!fotoFalhou) setPickedImage(null);
 
       setPhotoSavedAt(Date.now());
 
-      setHasChanged(false);
+      setHasChanged(fotoFalhou);
 
       if (emailChanged) {
         notify.info(
@@ -538,10 +540,17 @@ export default function ProfileScreen() {
         return;
       }
 
-      notify.success(
-        "Seus dados foram salvos com sucesso!",
-        "Perfil atualizado",
-      );
+      if (fotoFalhou) {
+        notify.warning(
+          "Seus dados foram salvos, mas não foi possível enviar a foto. Tente novamente.",
+          "Perfil atualizado parcialmente",
+        );
+      } else {
+        notify.success(
+          "Seus dados foram salvos com sucesso!",
+          "Perfil atualizado",
+        );
+      }
     } catch (error) {
       console.error("Erro ao atualizar dados:", error);
 

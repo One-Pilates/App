@@ -421,14 +421,35 @@ function ConteudoMensagemIA({
   );
 }
 
+/** Segundos do passo ativo; depois de um tempo avisa que a espera é normal (a chamada ao modelo demora). */
+function TempoDoPasso({ styles }: { styles: ReturnType<typeof getStyles> }) {
+  const [segundos, setSegundos] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setSegundos((s) => s + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (segundos < 3) return null;
+  return (
+    <Text style={styles.passoTempo}>
+      {" · "}
+      {segundos}s
+      {segundos >= 15 ? " — isso pode levar um pouco mais, aguarde" : ""}
+    </Text>
+  );
+}
+
 function ListaPassosView({
   passos,
   styles,
   colors,
+  aoVivo = false,
 }: {
   passos: PassoIA[];
   styles: ReturnType<typeof getStyles>;
   colors: ThemeColors;
+  aoVivo?: boolean;
 }) {
   const conteudo = (
     <View style={styles.passosLista}>
@@ -454,6 +475,7 @@ function ListaPassosView({
               ]}
             >
               {limparTagsInline(p.texto)}
+              {aoVivo && emAndamento ? <TempoDoPasso styles={styles} /> : null}
             </Text>
           </View>
         );
@@ -1357,6 +1379,7 @@ export default function AssistenteIASheet({
                         passos={passosAtuais}
                         styles={styles}
                         colors={colors}
+                        aoVivo
                       />
                     ) : (
                       <View style={styles.loadingRow}>
@@ -2062,6 +2085,7 @@ const getStyles = (
       color: colors.textSecondary,
     },
 
+    passoTempo: { fontWeight: "400", opacity: 0.7 },
     passoTextoAtivo: {
       color: colors.text,
       fontWeight: "600",

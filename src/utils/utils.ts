@@ -1,3 +1,5 @@
+import { Platform } from "react-native";
+
 // Máscaras e validações compartilhadas (portadas do web Frontend/src/utils/utils.js).
 
 export function formatarTelefone(telefone?: string | null): string {
@@ -317,4 +319,23 @@ export function getColorForEspecialidade(nome?: string): {
   const backgroundColor = (nome && especialidadeCores[nome]) || "#3788d8";
 
   return { backgroundColor, textColor: "#fff" };
+}
+
+/**
+ * Anexa um arquivo escolhido no aparelho ao FormData. No celular o React Native aceita o objeto
+ * { uri, name, type }; no navegador (web) isso viraria o texto "[object Object]", então
+ * é preciso baixar o arquivo como Blob.
+ */
+export async function anexarArquivo(
+  formData: FormData,
+  campo: string,
+  arquivo: { uri: string; name: string; type: string },
+): Promise<void> {
+  if (Platform.OS === "web") {
+    const resposta = await fetch(arquivo.uri);
+    const blob = await resposta.blob();
+    formData.append(campo, blob, arquivo.name);
+    return;
+  }
+  formData.append(campo, arquivo as unknown as Blob);
 }

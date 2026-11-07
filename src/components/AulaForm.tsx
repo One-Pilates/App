@@ -93,6 +93,33 @@ export default function AulaForm({
   const [todosAlunos, setTodosAlunos] = useState<AlunoAgendamento[]>([]);
   const [campoAberto, setCampoAberto] = useState<CampoAberto>(null);
   const [dataAberta, setDataAberta] = useState(false);
+  // Alunos que ficariam além do pacote de aulas (só avisa, nunca bloqueia o agendamento).
+  const [avisosPacote, setAvisosPacote] = useState<{ alunoId: number; mensagem: string }[]>([]);
+
+  useEffect(() => {
+    const ids = alunos.map((a) => Number(a.id)).filter((id) => Number.isFinite(id) && id > 0);
+    if (!especialidadeId || ids.length === 0) {
+      setAvisosPacote([]);
+      return undefined;
+    }
+    let cancelado = false;
+    api
+      .get("api/agendamentos/verificar-pacote", {
+        params: { alunoIds: ids.join(","), especialidadeId },
+      })
+      .then((res) => {
+        if (!cancelado) {
+          setAvisosPacote((res.data || []).filter((v: { excedeUmPacote?: boolean }) => v.excedeUmPacote));
+        }
+      })
+      .catch(() => {
+        // o aviso é só informativo
+        if (!cancelado) setAvisosPacote([]);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [alunos, especialidadeId]);
 
   useEffect(() => {
     Promise.all([
@@ -240,12 +267,20 @@ export default function AulaForm({
           .filter((id) => Number.isFinite(id) && id > 0),
       };
 
-      await api.post(
+      const resposta = await api.post(
         usarAbsoluto ? "api/agendamentos/absoluto" : "api/agendamentos",
         payload,
       );
 
-      notify.success("Aula criada com sucesso!");
+      // a aula foi salva; os avisos só informam quem ficou além do pacote de aulas
+      const avisos: string[] = Array.isArray(resposta.data?.avisos)
+        ? resposta.data.avisos.map(String)
+        : [];
+      if (avisos.length > 0) {
+        notify.warning(`Aula criada. ${avisos.join("\n")}`, "Pacote de aulas");
+      } else {
+        notify.success("Aula criada com sucesso!");
+      }
 
       const destino = {
         idProfessor: String(professorId),
@@ -566,6 +601,25 @@ export default function AulaForm({
               ))}
             </Secao>
           </EtapaCard>
+        )}
+
+        {(etapaAtual === 3 || etapaAtual === 4) && avisosPacote.length > 0 && (
+          <View style={styles.avisoPacote} accessibilityRole="alert">
+            <View style={styles.avisoPacoteTitulo}>
+              <Feather name="alert-triangle" size={16} color={isDark ? "#fcd34d" : "#92400e"} />
+              <Text style={styles.avisoPacoteTituloTexto}>
+                Aluno sem aulas disponíveis no pacote
+              </Text>
+            </View>
+            {avisosPacote.map((a) => (
+              <Text key={a.alunoId} style={styles.avisoPacoteTexto}>
+                • {a.mensagem}
+              </Text>
+            ))}
+            <Text style={styles.avisoPacoteRodape}>
+              Você ainda pode agendar: a aula fica além do pacote até a secretaria ajustar o saldo.
+            </Text>
+          </View>
         )}
 
         <View style={styles.acoes}>
@@ -1044,6 +1098,18 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
     },
 
     acoes: { flexDirection: "row", gap: 12 },
+    avisoPacote: {
+      marginBottom: 14,
+      padding: 13,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: isDark ? "#b45309" : "#fcd34d",
+      backgroundColor: isDark ? "rgba(245,158,11,.12)" : "#fffbeb",
+    },
+    avisoPacoteTitulo: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 },
+    avisoPacoteTituloTexto: { flex: 1, fontSize: 13, fontWeight: "700", color: isDark ? "#fcd34d" : "#92400e" },
+    avisoPacoteTexto: { fontSize: 12.5, lineHeight: 18, color: isDark ? "#fde68a" : "#92400e" },
+    avisoPacoteRodape: { fontSize: 11.5, marginTop: 8, color: isDark ? "#fde68a" : "#92400e" },
 
     btnVoltar: {
       flexDirection: "row",

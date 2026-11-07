@@ -13,6 +13,7 @@ import {
   Platform,
   ActivityIndicator,
   KeyboardAvoidingView,
+  Alert,
 } from "react-native";
 
 import { Feather } from "@expo/vector-icons";
@@ -73,6 +74,12 @@ interface InformacoesAluno {
   notificacaoAtiva: boolean;
 
   observacao: string;
+}
+
+interface PacoteForm {
+  especialidadeId: number;
+  especialidade: string;
+  saldo: number;
 }
 
 type Erros = Record<string, string>;
@@ -184,6 +191,59 @@ export default function StudentForm({ alunoId }: { alunoId?: string }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const [showUfModal, setShowUfModal] = useState(false);
+
+  // Pacote de aulas por especialidade. Cadastro: todas começam com 0 aula.
+  const [pacotes, setPacotes] = useState<PacoteForm[]>([]);
+  const [pacotesOriginais, setPacotesOriginais] = useState<PacoteForm[]>([]);
+
+  useEffect(() => {
+    const carregar: Promise<PacoteForm[]> = isEditMode
+      ? api.get(`api/alunos/${alunoId}/pacotes`).then((res) => res.data || [])
+      : api.get("api/especialidades").then((res) =>
+          (res.data || []).map((e: { id: number; nome: string }) => ({
+            especialidadeId: e.id,
+            especialidade: e.nome,
+            saldo: 0,
+          })),
+        );
+
+    carregar
+      .then((lista) => {
+        setPacotes(lista);
+        setPacotesOriginais(lista);
+      })
+      .catch((err) => {
+        console.error("Erro ao carregar o pacote de aulas:", err);
+        notify.warning("Não foi possível carregar o pacote de aulas.");
+      });
+  }, [alunoId]);
+
+  function atualizarPacote(especialidadeId: number, valor: string) {
+    const aulas = Math.max(0, Number.parseInt(valor.replace(/\D/g, ""), 10) || 0);
+    setPacotes((prev) =>
+      prev.map((p) => (p.especialidadeId === especialidadeId ? { ...p, saldo: aulas } : p)),
+    );
+  }
+
+  // Grava só os saldos que mudaram. Devolve false se algum falhar, sem perder o cadastro já feito.
+  async function salvarPacotes(id?: number | string): Promise<boolean> {
+    if (!id) return false;
+    const alterados = pacotes.filter((p) => {
+      const original = pacotesOriginais.find((o) => o.especialidadeId === p.especialidadeId);
+      return p.saldo !== (original?.saldo ?? 0);
+    });
+    try {
+      await Promise.all(
+        alterados.map((p) =>
+          api.put(`api/alunos/${id}/pacotes/${p.especialidadeId}`, { aulas: p.saldo }),
+        ),
+      );
+      return true;
+    } catch (err) {
+      console.error("Erro ao salvar o pacote de aulas:", err);
+      return false;
+    }
+  }
 
   // Carrega o aluno no modo edição.
 
@@ -304,6 +364,8 @@ export default function StudentForm({ alunoId }: { alunoId?: string }) {
         notificacaoAtiva: true,
         observacao: "",
       });
+
+      setPacotes((prev) => prev.map((p) => ({ ...p, saldo: 0 })));
     }
 
     router.back();
@@ -515,24 +577,48 @@ export default function StudentForm({ alunoId }: { alunoId?: string }) {
     };
 
     try {
+      let idSalvo: number | string | undefined = alunoId;
+      let senhaProvisoria = "";
+
       if (isEditMode) {
         await api.patch(`api/alunos/${alunoId}`, payload);
-
-        notify.success("Aluno atualizado com sucesso!");
       } else {
-        await api.post("api/alunos", payload);
-
-        notify.success("Aluno cadastrado com sucesso!");
+        // Como no professor: a senha provisória vai no cadastro e o backend a envia por e-mail.
+        senhaProvisoria = Math.floor(100000 + Math.random() * 900000).toString();
+        const resposta = await api.post("api/alunos", { ...payload, senha: senhaProvisoria });
+        idSalvo = resposta.data?.id;
       }
 
-      sair();
-    } catch (error) {
+      const pacoteSalvo = await salvarPacotes(idSalvo);
+
+      if (isEditMode) {
+        notify.success("Aluno atualizado com sucesso!");
+        if (!pacoteSalvo) {
+          notify.warning("O pacote de aulas não foi atualizado. Tente de novo na edição do aluno.");
+        }
+        sair();
+      } else {
+        Alert.alert(
+          "Aluno cadastrado com sucesso!",
+          `Nome: ${dadosPessoais.nomeCompleto}\nEmail (login): ${dadosPessoais.email}\n\n` +
+            `Senha provisória: ${senhaProvisoria}\nEnviada por e-mail ao aluno. Ele deve trocá-la no primeiro acesso.` +
+            (pacoteSalvo
+              ? ""
+              : "\n\nO pacote de aulas não foi atualizado. Ajuste na edição do aluno."),
+          [{ text: "OK, entendi!", onPress: sair }],
+        );
+      }
+    } catch (error: any) {
       console.error("Erro ao salvar aluno:", error);
 
+      const dados = error?.response?.data;
+      const msgServidor =
+        typeof dados === "string" ? dados : dados?.erro || dados?.message || "";
       notify.error(
-        isEditMode
-          ? "Não foi possível atualizar o aluno."
-          : "Não foi possível cadastrar o aluno.",
+        msgServidor ||
+          (isEditMode
+            ? "Não foi possível atualizar o aluno."
+            : "Não foi possível cadastrar o aluno."),
       );
     } finally {
       setCarregando(false);
@@ -840,6 +926,30 @@ export default function StudentForm({ alunoId }: { alunoId?: string }) {
             </View>
 
             <View style={styles.inputGroup}>
+              <Text style={styles.label}>Pacote de aulas</Text>
+              <Text style={styles.pacoteAjuda}>
+                Quantas aulas o aluno tem em cada especialidade. A aula é descontada ao agendar; o
+                sistema avisa quando o aluno passa do pacote, mas não bloqueia o agendamento.
+              </Text>
+              {pacotes.length === 0 ? (
+                <Text style={styles.pacoteAjuda}>Nenhuma especialidade cadastrada.</Text>
+              ) : (
+                pacotes.map((p) => (
+                  <View key={p.especialidadeId} style={styles.pacoteLinha}>
+                    <Text style={styles.pacoteNome}>{p.especialidade}</Text>
+                    <TextInput
+                      style={styles.pacoteInput}
+                      value={String(p.saldo)}
+                      onChangeText={(v) => atualizarPacote(p.especialidadeId, v)}
+                      keyboardType="number-pad"
+                      accessibilityLabel={`Aulas de ${p.especialidade}`}
+                    />
+                  </View>
+                ))
+              )}
+            </View>
+
+            <View style={styles.inputGroup}>
               <Text style={styles.label}>Observações</Text>
 
               <TextInput
@@ -905,6 +1015,14 @@ export default function StudentForm({ alunoId }: { alunoId?: string }) {
                   informacoesAluno.notificacaoAtiva ? "Ativado" : "Desativado"
                 }
               />
+
+              {pacotes.map((p) => (
+                <LinhaInfo
+                  key={p.especialidadeId}
+                  label={`Pacote · ${p.especialidade}`}
+                  valor={`${p.saldo} ${p.saldo === 1 ? "aula" : "aulas"}`}
+                />
+              ))}
 
               <LinhaInfo
                 label="Observações"
@@ -1225,6 +1343,28 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
     etapaTitle: { fontSize: 18, fontWeight: "bold", color: colors.text },
     etapaSubtitle: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
     inputGroup: { marginBottom: 16 },
+    pacoteAjuda: { fontSize: 12, lineHeight: 17, color: colors.textSecondary, marginBottom: 10 },
+    pacoteLinha: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderSubtle,
+    },
+    pacoteNome: { flex: 1, fontSize: 14, fontWeight: "600", color: colors.text },
+    pacoteInput: {
+      width: 72,
+      textAlign: "center",
+      fontSize: 15,
+      fontWeight: "700",
+      color: colors.text,
+      paddingVertical: 8,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.borderSubtle,
+      backgroundColor: colors.surfaceCard,
+    },
     label: { fontSize: 13, fontWeight: "600", color: colors.text, marginBottom: 8 },
     required: { color: "#ef4444" },
     inputContainer: {

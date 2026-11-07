@@ -1,7 +1,7 @@
 import React from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, type RelativePathString } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -9,12 +9,11 @@ import { useTheme } from "@/contexts/ThemeContext";
 export default function MoreScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const { colors } = useTheme();
   const items = [
-    { label: "Perfil", description: "Seus dados e informações pessoais", icon: "user" as const, onPress: () => router.push("/(aluno)/perfil") },
-    { label: "Notificações", description: "Lembretes e atualizações das aulas", icon: "bell" as const, onPress: () => router.push("/(aluno)/notificacoes") },
-    { label: "Mais alunos", description: "Visualize os demais alunos cadastrados", icon: "users" as const, onPress: () => router.push("/(aluno)/mais-alunos") },
+    { label: "Editar Perfil", description: "Seus dados e informações pessoais", icon: "user" as const, onPress: () => router.push("/(aluno)/perfil" as RelativePathString) },
+    { label: "Notificações", description: "Lembretes e atualizações das aulas", icon: "bell" as const, onPress: () => router.push("/(aluno)/notificacoes" as RelativePathString) },
   ];
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={{ paddingTop: insets.top + 18, paddingBottom: 28 }}>

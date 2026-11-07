@@ -131,10 +131,6 @@ export default function SecretaryLayout() {
 
       <Tabs.Screen name="perfilView/[tipo]/[id]" options={hiddenTabOptions} />
 
-      <Tabs.Screen name="aluno-preview" options={hiddenTabOptions} />
-      <Tabs.Screen name="aluno-preview-detalhes/[id]" options={hiddenTabOptions} />
-      <Tabs.Screen name="aluno-preview-confirmar/[id]" options={hiddenTabOptions} />
-      <Tabs.Screen name="aluno-preview-cancelar/[id]" options={hiddenTabOptions} />
     </Tabs>
   );
 }

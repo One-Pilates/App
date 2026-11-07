@@ -72,6 +72,35 @@ export default function AulaEditSheet({
 
   const [carregando, setCarregando] = useState(false);
   const [salvando, setSalvando] = useState(false);
+  // Alunos recém-adicionados que ficariam além do pacote de aulas (só avisa, não bloqueia).
+  const [avisosPacote, setAvisosPacote] = useState<{ alunoId: number; mensagem: string }[]>([]);
+
+  useEffect(() => {
+    const jaNaAula = new Set((agendamento?.alunos || []).map((a) => a.id));
+    const novos = alunos
+      .map((a) => Number(a.id))
+      .filter((id) => Number.isFinite(id) && id > 0 && !jaNaAula.has(id));
+    if (!visible || !especialidadeId || novos.length === 0) {
+      setAvisosPacote([]);
+      return undefined;
+    }
+    let cancelado = false;
+    api
+      .get("api/agendamentos/verificar-pacote", {
+        params: { alunoIds: novos.join(","), especialidadeId },
+      })
+      .then((res) => {
+        if (!cancelado) {
+          setAvisosPacote((res.data || []).filter((v: { excedeUmPacote?: boolean }) => v.excedeUmPacote));
+        }
+      })
+      .catch(() => {
+        if (!cancelado) setAvisosPacote([]);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [visible, alunos, especialidadeId, agendamento]);
   const [campoAberto, setCampoAberto] = useState<CampoSelect>(null);
 
   useEffect(() => {
@@ -281,6 +310,25 @@ export default function AulaEditSheet({
                     </TouchableOpacity>
                   </View>
                 ))
+              )}
+
+              {avisosPacote.length > 0 && (
+                <View style={styles.avisoPacote} accessibilityRole="alert">
+                  <View style={styles.avisoPacoteTitulo}>
+                    <Feather name="alert-triangle" size={16} color={isDark ? "#fcd34d" : "#92400e"} />
+                    <Text style={styles.avisoPacoteTituloTexto}>
+                      Aluno sem aulas disponíveis no pacote
+                    </Text>
+                  </View>
+                  {avisosPacote.map((a) => (
+                    <Text key={a.alunoId} style={styles.avisoPacoteTexto}>
+                      • {a.mensagem}
+                    </Text>
+                  ))}
+                  <Text style={styles.avisoPacoteRodape}>
+                    Você ainda pode salvar: a aula fica além do pacote até a secretaria ajustar o saldo.
+                  </Text>
+                </View>
               )}
 
               <TouchableOpacity
@@ -494,6 +542,18 @@ const getStyles = (colors: ThemeColors, isDark: boolean) =>
 
     alunoNome: { flex: 1, fontSize: 14, color: colors.text, fontWeight: "500" },
 
+    avisoPacote: {
+      marginTop: 12,
+      padding: 13,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: isDark ? "#b45309" : "#fcd34d",
+      backgroundColor: isDark ? "rgba(245,158,11,.12)" : "#fffbeb",
+    },
+    avisoPacoteTitulo: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 },
+    avisoPacoteTituloTexto: { flex: 1, fontSize: 13, fontWeight: "700", color: isDark ? "#fcd34d" : "#92400e" },
+    avisoPacoteTexto: { fontSize: 12.5, lineHeight: 18, color: isDark ? "#fde68a" : "#92400e" },
+    avisoPacoteRodape: { fontSize: 11.5, marginTop: 8, color: isDark ? "#fde68a" : "#92400e" },
     btnSalvar: {
       flexDirection: "row",
       alignItems: "center",

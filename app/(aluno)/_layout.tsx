@@ -44,17 +44,13 @@ export default function StudentLayout() {
         tabBarLabelStyle: { fontSize: 12, fontWeight: "600" },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: "Início", tabBarIcon: ({ color, size }) => <Feather name="pie-chart" size={size} color={String(color)} /> }} />
+      <Tabs.Screen name="inicio" options={{ title: "Início", tabBarIcon: ({ color, size }) => <Feather name="pie-chart" size={size} color={String(color)} /> }} />
       <Tabs.Screen name="agenda" options={{ title: "Agenda", tabBarIcon: ({ color, size }) => <Feather name="calendar" size={size} color={String(color)} /> }} />
-      <Tabs.Screen name="alunos" options={{ title: "Alunos", tabBarIcon: ({ color, size }) => <Feather name="users" size={size} color={String(color)} /> }} />
+      <Tabs.Screen name="historico" options={{ title: "Histórico", tabBarIcon: ({ color, size }) => <Feather name="clock" size={size} color={String(color)} /> }} />
       <Tabs.Screen name="mais" options={{ title: "Mais", tabBarIcon: ({ color, size }) => <Feather name="menu" size={size} color={String(color)} /> }} />
       <Tabs.Screen name="perfil" options={hiddenTabOptions} />
-      <Tabs.Screen name="perfil/[id]" options={hiddenTabOptions} />
-      <Tabs.Screen name="mais-alunos" options={hiddenTabOptions} />
       <Tabs.Screen name="notificacoes" options={hiddenTabOptions} />
       <Tabs.Screen name="agenda/detalhes/[id]" options={hiddenTabOptions} />
-      <Tabs.Screen name="agenda/confirmar/[id]" options={hiddenTabOptions} />
-      <Tabs.Screen name="agenda/cancelar/[id]" options={hiddenTabOptions} />
     </Tabs>
   );
 }

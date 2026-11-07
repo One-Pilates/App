@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
-import { useRouter, type RelativePathString } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, ThemeColors } from '@/contexts/ThemeContext';
 
@@ -48,13 +48,6 @@ export default function MaisScreen() {
       description: 'Dados cadastrais, senha e preferências do app',
       icon: 'user',
       onPress: () => router.push('/(secretary)/perfil'),
-    },
-    {
-      key: 'agenda-aluno-preview',
-      label: 'Visualizar Agenda do Aluno',
-      description: 'Demonstração enquanto o backend não está pronto',
-      icon: 'calendar',
-      onPress: () => router.push('/(secretary)/aluno-preview' as RelativePathString),
     },
   ];
 

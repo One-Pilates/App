@@ -48,7 +48,7 @@ export default function Index() {
   }
 
   if (role === "ALUNO") {
-    return <Redirect href="/(aluno)/index" />;
+    return <Redirect href="/(aluno)/inicio" />;
   }
 
   // SECRETARIA e ADMINISTRADOR usam o mesmo fluxo (secretary)
